@@ -46,6 +46,13 @@ export function useOnDrop() {
         //   console.error(`Node type "${type}" não está registrado no nodeTypes.`);
         //   return;
         // }
+
+        // Se for um grupo, defina um tamanho padrão
+        // let style = undefined;
+        // if (type === 'group') {
+        //     style = { width: 300, height: 200 };
+        // }
+
         const position = reactFlowInstance.screenToFlowPosition({
             x: clientX,
             y: clientY,
@@ -55,14 +62,10 @@ export function useOnDrop() {
             type: type,
             position,
             data: { label: `${type} node`, value: 1, type: type },
+            // ...(style ? { style } : {}),
         };
 
         // Adiciona o novo nó diretamente usando setNodes do contexto
         setNodes((nds) => nds.concat(newNode));
-
     }
-
-
-
-
 };
