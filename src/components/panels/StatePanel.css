@@ -1,0 +1,35 @@
+.state-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px #0001;
+  padding: 12px;
+  z-index: 100;
+  min-width: 320px;
+  max-width: 500px;
+  max-height: 70vh;
+  overflow: auto;
+}
+.state-panel__toggle {
+  background: #eee;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.state-panel--hidden {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.state-panel--hidden .state-panel__content {
+  display: none;
+}

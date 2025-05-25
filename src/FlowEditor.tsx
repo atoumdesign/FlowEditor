@@ -9,55 +9,41 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  ReactFlowProvider
+  ReactFlowProvider,
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import type { ReactFlowInstance } from '@xyflow/react';
+import type { OnNodeDrag, ReactFlowInstance } from '@xyflow/react';
 import { flowRefs } from '@/contexts/FlowRefs';
-
 
 // resource panel
 import ResourcesPanel from './components/panels/ResourcesPanel';
-import { onDragOver, useOnDrop } from './components/panels/DragAndDrop';
+import { onDragOver, onDrop } from './components/panels/DragAndDrop';
 
 // context menu
 import ContextMenu from '@/components/ContextMenu/ContextMenu';
 
 
+// group nodes
+import Account  from '@/components/nodes/Groups/Account'
+import VPC from '@/components/nodes/Groups/VPC'
+import PrivateSubnet from '@/components/nodes/Groups/PrivateSubnet';
+import PublicSubnet from './components/nodes/Groups/PublicSubnet';
+import StatePanel from './components/panels/StatePanel';
+
 const nodeTypes = {
-  group: (props) => (
-    <div style={{
-      background: '#f0f0f0',
-      border: '2px dashed #aaa',
-      width: '100%',
-      height: '100%',
-      position: 'relative'
-    }}>
-      <Handle type="target" position={Position.Top} />
-      {props.data?.label || 'Group Node'}
-    </div>
-  ),
+  account: Account,
+  vpc: VPC,
+  subnetprivate: PrivateSubnet,
+  subnetpublic: PublicSubnet,
   input: (props) => (
     <div>
       <Handle type="source" position={Position.Bottom} />
       Input Node
     </div>
   ),
-  // default: (props) => (
-  //   <div>
-  //     <Handle type="target" position={Position.Top} />
-  //     <Handle type="source" position={Position.Bottom} />
-  //     Default Node
-  //   </div>
-  // ),
-  // output: (props) => (
-  //   <div style={{width:'32px', height:'32px'}}>
-  //     <Handle type="target" position={Position.Top} />
-  //     Output Node
-  //   </div>
-    
-  // ),
 };
+
 
 // Gera nodeTypes dinamicamente a partir do componentsList, se necessário
 // const nodeTypes = Object.fromEntries(
@@ -66,14 +52,16 @@ const nodeTypes = {
 //   )
 // );
 
+
+
 export default function FlowEditor({ initialState, componentsList }) {
+  const { getIntersectingNodes } = useReactFlow()
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance>();
   const [nodes, setNodes, onNodesChange] = useNodesState(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
-  // context menu
-  const [menu, setMenu] = useState(null);
-  const ref = useRef(null);
 
+  
+  
   // Atualize os refs sempre que mudarem
   React.useEffect(() => {
     flowRefs.reactFlowInstance = reactFlowInstance ?? null;
@@ -81,20 +69,16 @@ export default function FlowEditor({ initialState, componentsList }) {
     flowRefs.nodeTypes = nodeTypes;
   }, [reactFlowInstance, setNodes, nodes, nodeTypes]);
 
+  // adiciona as ligações entre os nodes no estado 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges],
   );
 
-  // drag and drop
-  const onDrop = useOnDrop();
 
-  const handleDrop = useCallback(
-    (event: React.DragEvent) => {
-      onDrop(event);
-    },
-    [onDrop]
-  );
+  // ini - context menu /////////////////////////////////////////////////////
+  const [menu, setMenu] = useState(null);
+  const ref = useRef(null);
 
   // context menu
   const onNodeContextMenu = useCallback(
@@ -120,6 +104,42 @@ export default function FlowEditor({ initialState, componentsList }) {
   // Close the context menu if it's open whenever the window is clicked.
   const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
 
+  // fim - context menu /////////////////////////////////////////////////////
+
+  // const onNodeDrag:OnNodeDrag = (event, node) => {
+  //   // const overlappingNode = getIntersectingNodes(node)?.[0]
+
+  //   console.log(overlappingNode)
+  // }
+
+// Callback executado durante o arraste de nós
+  const onNodeDrag = useCallback(
+    (event: MouseEvent, draggedNode: Node) => {
+      // Obtém os nós que estão se intersectando com o nó arrastado
+      const intersectingNodes = getIntersectingNodes(draggedNode);
+      const intersectingIds = intersectingNodes.map((node) => node.id);
+      console.log(`O nó ${draggedNode.id} intersecta com:`, intersectingIds);
+    },
+    [getIntersectingNodes]
+  );
+
+    const onNodeDragStop = (event: React.MouseEvent, draggedNode: Node) => {
+    // Usa o getIntersectingNodes para identificar nós que estão interferindo com o nó arrastado
+    const intersectingNodes = getIntersectingNodes(draggedNode);
+    if (intersectingNodes.length > 0) {
+      console.log(
+        `O nó ${draggedNode.id} intersectou com: ${intersectingNodes.map((n) => n.id).join(", ")}`
+      );
+    }
+    console.log(intersectingNodes[0])
+  };
+
+
+
+
+
+
+
   return (
       <div style={{
         width: '100vw',
@@ -127,31 +147,36 @@ export default function FlowEditor({ initialState, componentsList }) {
         flexDirection: 'column',
         display: 'flex'
       }}>
-        <ReactFlowProvider>
           <ReactFlow
             ref={ref}
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onInit={setReactFlowInstance}
-            onDragOver={(event) => onDragOver(event)}
-            onDrop={handleDrop}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onPaneClick={onPaneClick}
-            onNodeContextMenu={onNodeContextMenu}
-            fitView
-          >
+            nodes={nodes} // armazena os nodes dos recursos
+            edges={edges} // armazena as ligações entre os recursos
+            nodeTypes={nodeTypes} // Tipos de nós personalizados disponíveis em um fluxo.
+            onNodesChange={onNodesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado ao arrastar, selecionar e mover um nó.
+            onEdgesChange={onEdgesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado na seleção e remoção de arestas.
+            onConnect={onConnect} // adiciona as novas ligações entre os nodes em edges
+            onInit={setReactFlowInstance} // O onInitretorno de chamada é chamado quando a viewport é inicializada. Nesse ponto, você pode usar a instância para chamar métodos como fitViewou zoomTo.
+            
+            onDragOver={(event) => onDragOver(event)} // a dragged item is being dragged over a valid drop target, every few hundred milliseconds.
+            onDrop={onDrop} // an item is dropped on a valid drop target
+            onNodeDragStop={onNodeDragStop}
+            // onNodeDrag={onNodeDrag}
+
+
+
+            onPaneClick={onPaneClick} // Este manipulador de eventos é chamado quando o usuário clica dentro do painel.
+            onNodeContextMenu={onNodeContextMenu} // Este manipulador de eventos é chamado quando um usuário clica com o botão direito em um nó.
+            
+            
+            fitView // o fluxo será ampliado e panorâmico para ajustar todos os nós fornecidos inicialmente
+          > 
             <Controls />
             <MiniMap />
             <Background variant="dots" gap={12} size={1} />
             <ResourcesPanel componentsList={componentsList} />
+            <StatePanel/>
             {menu && <ContextMenu onClick={onPaneClick} {...menu} />}
           </ReactFlow>
-        </ReactFlowProvider>
-
       </div>
-
   );
 }

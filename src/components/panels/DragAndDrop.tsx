@@ -13,59 +13,82 @@ export const onDragStart = (
 };
 
 export const onDragOver = (
-    event: React.DragEvent
+  event: DragEvent
+) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+};
+
+
+ export const onDrop = (
+  event: DragEvent
 ) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-};
 
-export function useOnDrop() {
+    const reactFlowInstance = flowRefs.reactFlowInstance;
+    const setNodes = flowRefs.setNodes;
 
-    // const flowContext = useFlowContext();
+    if (reactFlowInstance) {
+      const type = event.dataTransfer.getData('application/reactflow');
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      const newNode: Node = {
+        id: uuid(),
+        type,
+        position,
+        data: { label: `${type} node` },
+      };
 
-    return (event: React.DragEvent | DragEvent) => {
-        event.preventDefault();
-
-        const reactFlowInstance = flowRefs.reactFlowInstance;
-        const setNodes = flowRefs.setNodes;
-        const nodeTypes = flowRefs.nodeTypes;
-
-        if (!reactFlowInstance || !setNodes) {
-            console.warn('Refs não disponíveis no drop.');
-            return;
-        }
-        // Para garantir compatibilidade, converta para DragEvent se necessário
-        const clientX = 'clientX' in event ? event.clientX : (event as any).clientX;
-        const clientY = 'clientY' in event ? event.clientY : (event as any).clientY;
-
-        // Recupera o tipo do nó do dataTransfer
-        const type = (event as any).dataTransfer.getData("application/reactflow");
-
-        // // Verifica se o tipo é válido
-        // if (!type || !flowContext.nodeTypes || !flowContext.nodeTypes[type]) {
-        //   console.error(`Node type "${type}" não está registrado no nodeTypes.`);
-        //   return;
-        // }
-
-        // Se for um grupo, defina um tamanho padrão
-        // let style = undefined;
-        // if (type === 'group') {
-        //     style = { width: 300, height: 200 };
-        // }
-
-        const position = reactFlowInstance.screenToFlowPosition({
-            x: clientX,
-            y: clientY,
-        });
-        const newNode: Node = {
-            id: uuid(),
-            type: type,
-            position,
-            data: { label: `${type} node`, value: 1, type: type },
-            // ...(style ? { style } : {}),
-        };
-
-        // Adiciona o novo nó diretamente usando setNodes do contexto
-        setNodes((nds) => nds.concat(newNode));
+      setNodes((nds) => nds.concat(newNode));
     }
-};
+  };
+
+// export const onDrop = (
+//   event: DragEvent
+// ) => {
+//     event.preventDefault();
+
+//     const reactFlowInstance = flowRefs.reactFlowInstance;
+//     const setNodes = flowRefs.setNodes;
+
+//     if (reactFlowInstance && setNodes) {
+//       const type = event.dataTransfer.getData('application/reactflow');
+//       const position = reactFlowInstance.screenToFlowPosition({
+//         x: event.clientX,
+//         y: event.clientY,
+//       });
+
+//       // Verifica se está sobre um node do tipo basegroup
+//       const nodes = reactFlowInstance.getNodes ? reactFlowInstance.getNodes() : [];
+//       const groupNode = nodes.find(
+//         (n) =>
+//           (n.type === 'account' ||
+//            n.type === 'vpc' ||
+//            n.type === 'subnetprivate' ||
+//            n.type === 'subnetpublic') && // tipos basegroup
+//           n.position &&
+//           n.style &&
+//           position.x >= n.position.x &&
+//           position.x <= n.position.x + (n.style.width || 0) &&
+//           position.y >= n.position.y &&
+//           position.y <= n.position.y + (n.style.height || 0)
+//       );
+
+//       const newNode: Node = {
+//         id: uuid(),
+//         type,
+//         position: groupNode
+//           ? {
+//               x: position.x - groupNode.position.x,
+//               y: position.y - groupNode.position.y,
+//             }
+//           : position,
+//         data: { label: `${type} node` },
+//         ...(groupNode ? { parentId: groupNode.id, extent: 'parent' } : {}),
+//       };
+
+//       setNodes((nds) => nds.concat(newNode));
+//     }
+// };
