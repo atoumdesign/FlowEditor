@@ -1,9 +1,9 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ReactFlowProvider } from '@xyflow/react';
 import FlowEditor from './FlowEditor.tsx'
 import './index.css'
 import { LayoutDashboard, Square } from 'lucide-react'
+import { AWS } from '@blendmesh/icons';
 
 const initialState = {
  nodes: [
@@ -82,6 +82,32 @@ const initialState = {
 }
 
 const componentsList = [
+      {
+        category: 'Compute',
+        components: [
+            {
+                type: 'lambdaFunction',
+                label: 'Lambda function',
+                category: 'compute',
+                icon: <AWS.LambdaFunction size={32}/>,
+                disabled: false
+            },
+            {
+                type: 'default',
+                label: 'Instance',
+                category: 'compute',
+                icon: <AWS.Instance size={32}/>,
+                disabled: true
+            },
+            {
+                type: 'default',
+                label: 'Instances',
+                category: 'compute',
+                icon: <AWS.Instances size={32}/>,
+                disabled: true
+            },
+        ]
+    },
     {
         category: 'Generals',
         components: [
@@ -119,31 +145,31 @@ const componentsList = [
                 disabled: false
             },
             {
-                type: 'default',
-                label: 'VPC',
+                type: 'account',
+                label: 'AWS Account',
                 category: 'Others',
-                icon: <LayoutDashboard size={32} />,
+                icon: <AWS.Account size={32} />,
                 disabled: false
             },
             {
-                type: 'default',
-                label: 'Subnet',
+                type: 'vpc',
+                label: 'Virtual Private Cloud',
                 category: 'Others',
-                icon: <LayoutDashboard size={32} />,
+                icon: <AWS.VPCGroup size={32} />,
                 disabled: false
             },
             {
-                type: 'default',
-                label: 'Account',
+                type: 'subnetprivate',
+                label: 'Subnet Private',
                 category: 'Others',
-                icon: <LayoutDashboard size={32} />,
+                icon: <AWS.PrivateSubnet size={32} />,
                 disabled: false
             },
             {
-                type: 'default',
-                label: 'generic resize Node',
+                type: 'subnetpublic',
+                label: 'Subnet Public',
                 category: 'Others',
-                icon: <LayoutDashboard size={32} />,
+                icon: <AWS.PublicSubnet size={32} />,
                 disabled: false
             },
             {
@@ -165,10 +191,7 @@ const componentsList = [
 ]
 
 createRoot(document.getElementById('root')!).render(
-  // <StrictMode>
     <ReactFlowProvider>
       <FlowEditor initialState={initialState} componentsList={componentsList} />
     </ReactFlowProvider>
-    
-  // </StrictMode>,
 )

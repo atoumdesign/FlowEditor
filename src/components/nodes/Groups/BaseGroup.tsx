@@ -10,6 +10,8 @@ const BaseGroup = ({ data, selected, borderColor, backgroundColor, Icon, label }
         border: `2px solid ${borderColor || 'none'}`,
         borderRadius: 4,
         boxSizing: 'border-box',
+        minWidth: 200,
+        minHeight: 100,
       }}
     >
       <NodeResizer

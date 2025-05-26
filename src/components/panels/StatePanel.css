@@ -12,6 +12,7 @@
   max-width: 500px;
   max-height: 70vh;
   overflow: auto;
+  font-size: 10px;
 }
 .state-panel__toggle {
   background: #eee;

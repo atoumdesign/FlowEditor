@@ -54,6 +54,12 @@ export default function ContextMenu({
       >
         delete
       </button>
+      <button
+        // onClick={deleteNode}
+        disabled
+      >
+        edit node
+      </button>
     </div>
   );
 }

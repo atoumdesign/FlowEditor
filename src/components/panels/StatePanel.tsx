@@ -4,7 +4,7 @@ import "./StatePanel.css"; // Crie um CSS simples para o painel
 
 const StatePanel = () => {
   const { getNodes, getEdges } = useReactFlow();
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   return (
     <div className={`state-panel${visible ? "" : " state-panel--hidden"}`}>
