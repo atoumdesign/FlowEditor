@@ -56,26 +56,27 @@ const initialState = {
 
   {
     id: 'B',
-    type: 'input',
-    data: { label: 'child node 1' },
+    type: 'instance',
+    data: { label: 'instance node 1' },
     position: { x: 40, y: 40 },
     parentId: 'subnetprivate',
     extent: 'parent',
-    style: {
-      width: 32,
-      height: 32,
-    },
+    // style: {
+    //   width: 32,
+    //   height: 32,
+    // },
   },
   {
     id: 'C',
-    data: { label: 'child node 2' },
+    type: 'instance',
+    data: { label: 'instance node 2' },
     position: { x: 40, y: 40 },
     parentId: 'subnetpublic',
     extent: 'parent',
-    style: {
-      width: 32,
-      height: 32,
-    },
+    // style: {
+    //   width: 32,
+    //   height: 32,
+    // },
   },
   ],
   edges: [],
@@ -93,18 +94,49 @@ const componentsList = [
                 disabled: false
             },
             {
-                type: 'default',
+                type: 'instance',
                 label: 'Instance',
                 category: 'compute',
                 icon: <AWS.Instance size={32}/>,
-                disabled: true
+                disabled: false
+            }
+        ]
+    },
+    {
+        category: 'Storage',
+        components: [
+            {
+                type: 'bucket',
+                label: 'Bucket',
+                category: 'storage',
+                icon: <AWS.Bucket size={32}/>,
+                disabled: false
+            }
+        ]
+    },
+        {
+        category: 'Database',
+        components: [
+            {
+                type: 'mySQLInstance',
+                label: 'MySQL Instance',
+                category: 'database',
+                icon: <AWS.MySQLInstance size={32}/>,
+                disabled: false
             },
             {
-                type: 'default',
-                label: 'Instances',
-                category: 'compute',
-                icon: <AWS.Instances size={32}/>,
-                disabled: true
+                type: 'mariaDBInstance',
+                label: 'MariaDB Instance',
+                category: 'database',
+                icon: <AWS.MariaDBInstance size={32}/>,
+                disabled: false
+            },
+            {
+                type: 'postgreSQLInstance',
+                label: 'PostgreSQL Instance',
+                category: 'database',
+                icon: <AWS.PostgreSQLInstance size={32}/>,
+                disabled: false
             },
         ]
     },

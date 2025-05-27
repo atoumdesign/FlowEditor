@@ -29,7 +29,12 @@ import VPC from '@/components/nodes/Groups/VPC'
 import PrivateSubnet from '@/components/nodes/Groups/PrivateSubnet';
 import PublicSubnet from './components/nodes/Groups/PublicSubnet';
 import StatePanel from './components/panels/StatePanel';
-import LambdaFunction from './components/nodes/Resources/LambdaFunction';
+import LambdaFunction from './components/nodes/Resources/Compute/LambdaFunction';
+import Bucket from './components/nodes/Resources/Storage/Bucket';
+import Instance from './components/nodes/Resources/Compute/Instance';
+import MariaDBInstance from './components/nodes/Resources/Database/MariaDBInstance';
+import MySQLInstance from './components/nodes/Resources/Database/MySQLInstance';
+import PostgreSQLInstance from './components/nodes/Resources/Database/PostgreSQLInstance';
 
 const nodeTypes = {
   account: Account,
@@ -37,13 +42,16 @@ const nodeTypes = {
   subnetprivate: PrivateSubnet,
   subnetpublic: PublicSubnet,
   lambdaFunction: LambdaFunction,
-  input: (props) => (
-    <div>
-      <Handle type="source" position={Position.Bottom} />
-      Input Node
-    </div>
-  ),
+  bucket: Bucket,
+  instance: Instance,
+  mariaDBInstance: MariaDBInstance,
+  mySQLInstance: MySQLInstance,
+  postgreSQLInstance: PostgreSQLInstance
 };
+
+const defaultEdgeOptions = {
+  zIndex: 2000,
+}
 
 
 // Gera nodeTypes dinamicamente a partir do componentsList, se necessário
@@ -236,6 +244,7 @@ export default function FlowEditor({ initialState, componentsList }) {
         ref={ref}
         nodes={nodes} // armazena os nodes dos recursos
         edges={edges} // armazena as ligações entre os recursos
+        defaultEdgeOptions={defaultEdgeOptions}
         nodeTypes={nodeTypes} // Tipos de nós personalizados disponíveis em um fluxo.
         onNodesChange={onNodesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado ao arrastar, selecionar e mover um nó.
         onEdgesChange={onEdgesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado na seleção e remoção de arestas.

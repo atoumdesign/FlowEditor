@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@blendmesh/components-ui": "^0.0.1",
-    "@blendmesh/icons": "^0.0.5",
+    "@blendmesh/icons": "^0.0.6",
     "@radix-ui/react-context-menu": "^2.2.15",
     "@tailwindcss/vite": "^4.1.7",
     "@xyflow/react": "^12.6.4",

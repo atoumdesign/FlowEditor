@@ -1,30 +1,26 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { AWS } from '@blendmesh/icons'; // Substitua pelo seu ícone desejado
 
-const LambdaFunction = ({ data, isConnectable }) => {
+const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
   return (
     <div
-      className='w-8 h-8 items-center'
       style={{
-        minWidth: 32,
-        minHeight: 32,
-        maxWidth: 48,
-        maxHeight: 48,
+        height: 32,
+        width: 32,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        position: 'relative',
+        // position: 'relative',
       }}
     >
       {/* Ícone centralizado */}
-      <div >
-        <AWS.LambdaFunction size={32} />
+      <div>
+        {Icon && <Icon size={32} />}
       </div>
 
       {/* Label com quebra de linha */}
       <div
-      className="text-xs text-center"
+        className="text-xs text-center"
         style={{
           marginTop: 4,
           textAlign: 'center',
@@ -33,7 +29,7 @@ const LambdaFunction = ({ data, isConnectable }) => {
           // whiteSpace: 'pre-line',
         }}
       >
-        {data?.label || 'Custom Node\nLabel'}
+        {label || data?.label || 'Custom Node\nLabel'}
       </div>
 
       {/* Handler de saída (direita) */}
@@ -55,4 +51,4 @@ const LambdaFunction = ({ data, isConnectable }) => {
   );
 };
 
-export default memo(LambdaFunction);
+export default memo(BaseResource);
