@@ -5,7 +5,7 @@ const LambdaFunction = (props) => (
   <ResourceNode
    {...props} 
    icon={AWS.LambdaFunction} 
-   label={props.data?.label} 
+   label={props.data?.label}
   />
 );
 

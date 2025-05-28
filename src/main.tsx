@@ -61,10 +61,6 @@ const initialState = {
     position: { x: 40, y: 40 },
     parentId: 'subnetprivate',
     extent: 'parent',
-    // style: {
-    //   width: 32,
-    //   height: 32,
-    // },
   },
   {
     id: 'C',
@@ -73,10 +69,6 @@ const initialState = {
     position: { x: 40, y: 40 },
     parentId: 'subnetpublic',
     extent: 'parent',
-    // style: {
-    //   width: 32,
-    //   height: 32,
-    // },
   },
   ],
   edges: [],

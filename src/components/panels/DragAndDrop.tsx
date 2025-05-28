@@ -27,13 +27,19 @@ export const onDragOver = (
 
     const reactFlowInstance = flowRefs.reactFlowInstance;
     const setNodes = flowRefs.setNodes;
+    const nodeTypes = flowRefs.nodeTypes;
 
-    if (reactFlowInstance) {
+    if (reactFlowInstance && setNodes && nodeTypes) {
       const type = event.dataTransfer.getData('application/reactflow');
+      if (!type || !nodeTypes[type]) {
+        return; // Não cria node default se não encontrar o tipo
+      }
+      
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
+
       const newNode: Node = {
         id: uuid(),
         type,

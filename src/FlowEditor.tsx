@@ -22,7 +22,9 @@ import { onDragOver, onDrop } from './components/panels/DragAndDrop';
 // context menu
 import ContextMenu from '@/components/ContextMenu/ContextMenu';
 
-
+// ResourceConfigPanel
+import ResourceConfigPanel from './components/panels/ResourceConfigPanel';
+import TopMenuBar from './components/panels/TopMenuBar';
 // group nodes
 import Account from '@/components/nodes/Groups/Account'
 import VPC from '@/components/nodes/Groups/VPC'
@@ -61,23 +63,6 @@ const defaultEdgeOptions = {
 //   )
 // );
 
-function reorderNodesByType(nodes) {
-  // Define a ordem desejada para os tipos
-  const typeOrder = {
-    account: 0,
-    vpc: 1,
-    subnetprivate: 2,
-    subnetpublic: 2,
-  };
-
-  // Ordena os nodes conforme a ordem acima, mantendo os demais no final
-  return [...nodes].sort((a, b) => {
-    const aOrder = typeOrder[a.type] ?? 99;
-    const bOrder = typeOrder[b.type] ?? 99;
-    return aOrder - bOrder;
-  });
-}
-
 
 export default function FlowEditor({ initialState, componentsList }) {
   const { getIntersectingNodes } = useReactFlow()
@@ -85,6 +70,7 @@ export default function FlowEditor({ initialState, componentsList }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialState.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
 
+  const [configPanelNodeId, setConfigPanelNodeId] = useState<string | null>(null);
 
 
   // Atualize os refs sempre que mudarem
@@ -119,8 +105,8 @@ export default function FlowEditor({ initialState, componentsList }) {
         top: event.clientY < pane.height - 200 && event.clientY,
         left: event.clientX < pane.width - 200 && event.clientX,
         right: event.clientX >= pane.width - 200 && pane.width - event.clientX,
-        bottom:
-          event.clientY >= pane.height - 200 && pane.height - event.clientY,
+        bottom: event.clientY >= pane.height - 200 && pane.height - event.clientY,
+        onOpenConfig: () => setConfigPanelNodeId(node.id),
       });
     },
     [setMenu],
@@ -233,13 +219,29 @@ export default function FlowEditor({ initialState, componentsList }) {
 
   // fim - adicionar node como filho /////////////////////////////////////////////////////
 
+function handleTest(msg) {
+  alert(`Exemplo de alerta: você clicou em ${msg}!`);
+}
+
   return (
     <div style={{
       width: '100vw',
       height: '100vh',
       flexDirection: 'column',
-      display: 'flex'
+      display: 'flex',
+      paddingTop: 36,
+      boxSizing: 'border-box'
     }}>
+      <TopMenuBar
+          onSave={() => handleTest("onSave")}
+          onExport={() => handleTest("onSave")}
+          onImport={() => handleTest("onSave")}
+          onExample={() => handleTest("onSave")}
+          // onToggleLabels={() => setShowLabels((v) => !v)}
+          // labelsVisible={showLabels}
+          // onTogglePanels={() => setPanelsVisible((v) => !v)}
+          // panelsVisible={panelsVisible}
+        />
       <ReactFlow
         ref={ref}
         nodes={nodes} // armazena os nodes dos recursos
@@ -269,8 +271,16 @@ export default function FlowEditor({ initialState, componentsList }) {
         <Background variant="dots" gap={12} size={1} />
         <ResourcesPanel componentsList={componentsList} />
         <StatePanel />
+        {configPanelNodeId && (
+          <ResourceConfigPanel
+            nodeId={configPanelNodeId}
+            onClose={() => setConfigPanelNodeId(null)}
+          />
+        )}
         {menu && <ContextMenu onClick={onPaneClick} {...menu} />}
+        
       </ReactFlow>
+      
     </div>
   );
 }

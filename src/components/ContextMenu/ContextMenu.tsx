@@ -8,6 +8,7 @@ export default function ContextMenu({
   left,
   right,
   bottom,
+  onOpenConfig,
   ...props
 }) {
   const { getNode, setNodes, addNodes, setEdges } = useReactFlow();
@@ -55,8 +56,8 @@ export default function ContextMenu({
         delete
       </button>
       <button
-        // onClick={deleteNode}
-        disabled
+        onClick={onOpenConfig}
+        disabled={!onOpenConfig}
       >
         edit node
       </button>
