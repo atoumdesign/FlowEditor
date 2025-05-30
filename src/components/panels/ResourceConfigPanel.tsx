@@ -8,6 +8,9 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
   const { getNode, setNodes } = useReactFlow();
   const node = getNode(nodeId);
 
+  // Estado local para as propriedades
+  const [localProperties, setLocalProperties] = useState(node?.data?.Properties || {});
+
   // Estado local para o label
   const [localLabel, setLocalLabel] = useState(node?.data?.label || "");
   const [width, setWidth] = useState(340);
@@ -18,13 +21,25 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
   // Sincroniza o label local ao abrir o painel ou mudar node
   useEffect(() => {
     setLocalLabel(node?.data?.label || "");
-  }, [nodeId, node?.data?.label]);
+    setLocalProperties(node?.data?.Properties || {});
+  }, [nodeId, node?.data?.label, node?.data?.Properties]);
 
   // Atualiza o node apenas ao sair do input ou pressionar Enter
   const commitLabel = () => {
     setNodes((nds) =>
       nds.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, label: localLabel } } : n
+      )
+    );
+  };
+
+  // Atualiza as propriedades no node
+  const commitProperties = () => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? { ...n, data: { ...n.data, Properties: { ...localProperties }  } }
+          : n
       )
     );
   };
@@ -36,6 +51,11 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
     startX.current = e.clientX;
     startWidth.current = width;
     document.body.style.cursor = "ew-resize";
+  };
+
+  // Handler para alteração de propriedades
+  const handlePropertyChange = (key, value) => {
+    setLocalProperties((prev) => ({ ...prev, [key]: value }));
   };
 
   useEffect(() => {
@@ -62,6 +82,9 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
   }, [width]);
 
   if (!node) return null;
+
+  // Garante que só renderiza as propriedades existentes no node atual
+  const propertyKeys = Object.keys(localProperties);
 
   return (
     <>
@@ -142,7 +165,30 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
             />
           </label>
         </div>
-        {/* Adicione outros campos de configuração conforme necessário */}
+        <div style={{ margin: "16px 0" }}>
+          <label style={{ fontWeight: 600 }}>Properties:</label>
+          {propertyKeys.length === 0 && (
+            <div style={{ color: "#888", fontSize: 13 }}>Nenhuma propriedade definida.</div>
+          )}
+          {propertyKeys.map((key) => (
+            <div key={key} style={{ margin: "6px 0" }}>
+              <span style={{ width: 80, display: "inline-block" }}>{key}:</span>
+              <input
+                type="text"
+                value={localProperties[key] ?? ""}
+                onChange={e => handlePropertyChange(key, e.target.value)}
+                onBlur={commitProperties}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    commitProperties();
+                    e.target.blur();
+                  }
+                }}
+                style={{ width: 140, fontSize: 13 }}
+              />
+            </div>
+          ))}
+        </div>
         <pre style={{ background: "#f8f8f8", padding: 8, borderRadius: 4 }}>
           {JSON.stringify(node.data, null, 2)}
         </pre>

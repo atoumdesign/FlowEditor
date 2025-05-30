@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 
 const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
+  const [showHandles, setShowHandles] = useState(false);
   return (
     <div
       style={{
@@ -12,6 +13,8 @@ const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
         alignItems: 'center',
         // position: 'relative',
       }}
+      onMouseEnter={() => setShowHandles(true)}
+      onMouseLeave={() => setShowHandles(false)}
     >
       {/* Ícone centralizado */}
       <div>
@@ -36,7 +39,13 @@ const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
       <Handle
         type="source"
         position={Position.Right}
-        style={{ top: '50%', background: '#555' }}
+        style={{
+          top: '50%',
+          background: '#555',
+          opacity: showHandles ? 1 : 0,
+          transition: 'opacity 0.2s',
+          pointerEvents: showHandles ? 'auto' : 'none',
+        }}
         isConnectable={isConnectable}
       />
 
@@ -44,7 +53,13 @@ const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
       <Handle
         type="target"
         position={Position.Left}
-        style={{ top: '50%', background: '#555' }}
+        style={{
+          top: '50%',
+          background: '#555',
+          opacity: showHandles ? 1 : 0,
+          transition: 'opacity 0.2s',
+          pointerEvents: showHandles ? 'auto' : 'none',
+        }}
         isConnectable={isConnectable}
       />
     </div>

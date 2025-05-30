@@ -23,7 +23,7 @@ const menuStyle = {
 
 const dropdownStyle = {
   position: "absolute",
-  top: 20,
+  top: 28,
   left: 0,
   background: "#fff",
   border: "1px solid #ddd",

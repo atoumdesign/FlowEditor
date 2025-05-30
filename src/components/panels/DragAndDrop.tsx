@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { flowRefs } from '@/contexts/FlowRefs';
 import type { Node } from '@xyflow/react';
 import React from 'react';
+import { defaultLambdaProperties } from '@/constants'
 
 
 export const onDragStart = (
@@ -40,11 +41,20 @@ export const onDragOver = (
         y: event.clientY,
       });
 
+      const defaultPropertiesMap: Record<string, any> = {
+        lambdaFunction: defaultLambdaProperties,
+        // instance: defaultInstanceProperties,
+        // bucket: defaultBucketProperties,
+      };
+
       const newNode: Node = {
         id: uuid(),
         type,
         position,
-        data: { label: `${type} node` },
+        data: { 
+          label: `${type} node`,
+          ...(defaultPropertiesMap[type] && { Properties: defaultPropertiesMap[type] })
+        },
       };
 
       setNodes((nds) => nds.concat(newNode));

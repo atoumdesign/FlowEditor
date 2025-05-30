@@ -6,6 +6,12 @@ const LambdaFunction = (props) => (
    {...props} 
    icon={AWS.LambdaFunction} 
    label={props.data?.label}
+   data={{
+      ...props.data,
+      Properties: {
+        ...(props.data?.Properties || {})
+      }
+    }}
   />
 );
 
