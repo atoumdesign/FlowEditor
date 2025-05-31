@@ -70,11 +70,73 @@ const defaultEdgeOptions = {
 export default function FlowEditor({ initialState, componentsList }) {
   const { getIntersectingNodes } = useReactFlow()
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance>();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialState.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
+  // const [nodes, setNodes, onNodesChange] = useNodesState(initialState.nodes);
+  // const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
+
+  // Estado para edição do nome da aba
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabName, setEditingTabName] = useState<string>("");
 
   const [configPanelNodeId, setConfigPanelNodeId] = useState<string | null>(null);
   const [showExamples, setShowExamples] = React.useState(false);
+
+  // Estado para múltiplas abas
+  const [tabs, setTabs] = useState([
+    {
+      id: 'tab-1',
+      name: 'Fluxo 1',
+      nodes: initialState.nodes,
+      edges: initialState.edges,
+    }
+  ]);
+  const [activeTabId, setActiveTabId] = useState('tab-1');
+
+
+
+  // Helpers para encontrar e atualizar a aba ativa
+  const activeTab = tabs.find(tab => tab.id === activeTabId);
+
+  function updateActiveTabNodes(nodes) {
+    setTabs(tabs =>
+      tabs.map(tab =>
+        tab.id === activeTabId ? { ...tab, nodes } : tab
+      )
+    );
+  }
+  function updateActiveTabEdges(edges) {
+    setTabs(tabs =>
+      tabs.map(tab =>
+        tab.id === activeTabId ? { ...tab, edges } : tab
+      )
+    );
+  }
+
+
+
+// Hooks do ReactFlow para a aba ativa
+  const [nodes, setNodes, onNodesChange] = useNodesState(activeTab?.nodes || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(activeTab?.edges || []);
+
+
+  // Sincroniza nodes/edges do ReactFlow com a aba ativa
+  React.useEffect(() => {
+    setNodes(activeTab?.nodes || []);
+    setEdges(activeTab?.edges || []);
+    // eslint-disable-next-line
+  }, [activeTabId]);
+
+  React.useEffect(() => {
+    if (activeTab) {
+      updateActiveTabNodes(nodes);
+      updateActiveTabEdges(edges);
+    }
+     
+  }, [nodes, edges]);
+
+
+
+
+
 
   // Atualize os refs sempre que mudarem
   React.useEffect(() => {
@@ -298,6 +360,126 @@ function handleExample(modelName) {
     }
   }
 
+    // Exporta todas as abas em um único arquivo
+  function handleExportAllTabs() {
+    const exportData = tabs.map(tab => ({
+      id: tab.id,
+      name: tab.name,
+      nodes: tab.nodes,
+      edges: tab.edges,
+    }));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "flow-multi-tabs-export.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  }
+
+  // Importa várias abas de um arquivo
+  function handleImportAllTabs() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const json = JSON.parse(evt.target.result);
+          if (Array.isArray(json) && json[0]?.nodes && json[0]?.edges) {
+            setTabs(json.map((tab, idx) => ({
+              id: tab.id || `tab-${idx + 1}`,
+              name: tab.name || `Fluxo ${idx + 1}`,
+              nodes: tab.nodes,
+              edges: tab.edges,
+            })));
+            setActiveTabId(json[0].id || 'tab-1');
+          } else {
+            alert("Arquivo inválido: não contém abas válidas.");
+          }
+        } catch (err) {
+          alert("Erro ao importar arquivo: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  // Adiciona uma nova aba
+  function handleAddTab() {
+    const newId = `tab-${tabs.length + 1}`;
+    setTabs([
+      ...tabs,
+      {
+        id: newId,
+        name: `Fluxo ${tabs.length + 1}`,
+        nodes: [],
+        edges: [],
+      }
+    ]);
+    setActiveTabId(newId);
+  }
+
+  // Fecha uma aba
+  function handleCloseTab(tabId) {
+    if (tabs.length === 1) return; // Não fecha a última aba
+    const idx = tabs.findIndex(tab => tab.id === tabId);
+    const newTabs = tabs.filter(tab => tab.id !== tabId);
+    setTabs(newTabs);
+    if (activeTabId === tabId) {
+      setActiveTabId(newTabs[Math.max(0, idx - 1)].id);
+    }
+  }
+
+  // Abrir exemplo em nova aba
+  function handleExampleSelect(modelName) {
+    const model = predefinedModels[modelName];
+    if (model && model.nodes && model.edges) {
+      const newId = `tab-${tabs.length + 1}`;
+      setTabs([
+        ...tabs,
+        {
+          id: newId,
+          name: modelName,
+          nodes: model.nodes,
+          edges: model.edges,
+        }
+      ]);
+      setActiveTabId(newId);
+      setShowExamples(false);
+    } else {
+      alert("Modelo inválido!");
+    }
+  }
+
+    // Função para iniciar edição
+  function handleStartEditTab(tabId: string, currentName: string) {
+    setEditingTabId(tabId);
+    setEditingTabName(currentName);
+  }
+
+  // Função para salvar novo nome
+  function handleSaveTabName() {
+    if (!editingTabId) return;
+    setTabs(tabs =>
+      tabs.map(tab =>
+        tab.id === editingTabId ? { ...tab, name: editingTabName.trim() || tab.name } : tab
+      )
+    );
+    setEditingTabId(null);
+    setEditingTabName("");
+  }
+
+  // Função para cancelar edição
+  function handleCancelEditTab() {
+    setEditingTabId(null);
+    setEditingTabName("");
+  }
+
   return (
     <div style={{
       width: '100vw',
@@ -307,6 +489,119 @@ function handleExample(modelName) {
       paddingTop: 36,
       boxSizing: 'border-box'
     }}>
+
+      {/* Abas */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        background: "#f8f8f8",
+        borderBottom: "1px solid #ddd",
+        height: 32,
+        paddingLeft: 8,
+        zIndex: 99,
+      }}>
+        {tabs.map(tab => (
+          <div
+            key={tab.id}
+            style={{
+              padding: "6px 18px",
+              marginRight: 4,
+              background: tab.id === activeTabId ? "#fff" : "#eee",
+              border: tab.id === activeTabId ? "1px solid #bbb" : "1px solid #ddd",
+              borderBottom: tab.id === activeTabId ? "none" : "1px solid #ddd",
+              borderRadius: "8px 8px 0 0",
+              cursor: "pointer",
+              position: "relative",
+              fontWeight: tab.id === activeTabId ? 600 : 400,
+            }}
+            onClick={() => setActiveTabId(tab.id)}
+            onDoubleClick={e => {
+              e.stopPropagation();
+              handleStartEditTab(tab.id, tab.name);
+            }}
+          >
+            {editingTabId === tab.id ? (
+              <input
+                autoFocus
+                value={editingTabName}
+                onChange={e => setEditingTabName(e.target.value)}
+                onBlur={handleSaveTabName}
+                onKeyDown={e => {
+                  if (e.key === "Enter") handleSaveTabName();
+                  if (e.key === "Escape") handleCancelEditTab();
+                }}
+                style={{
+                  fontSize: 14,
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #bbb",
+                  minWidth: 60,
+                }}
+              />
+            ) : (
+              tab.name
+            )}
+            {tabs.length > 1 && (
+              <span
+                style={{
+                  marginLeft: 8,
+                  color: "#888",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+                onClick={e => {
+                  e.stopPropagation();
+                  handleCloseTab(tab.id);
+                }}
+                title="Fechar aba"
+              >×</span>
+            )}
+          </div>
+        ))}
+        <button
+          style={{
+            marginLeft: 8,
+            padding: "2px 10px",
+            fontSize: 18,
+            border: "none",
+            background: "#eee",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+          onClick={handleAddTab}
+          title="Nova aba"
+        >+</button>
+        <button
+          style={{
+            marginLeft: 16,
+            padding: "2px 10px",
+            fontSize: 14,
+            border: "none",
+            background: "#eee",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+          onClick={handleExportAllTabs}
+          title="Exportar todas as abas"
+        >Exportar abas</button>
+        <button
+          style={{
+            marginLeft: 8,
+            padding: "2px 10px",
+            fontSize: 14,
+            border: "none",
+            background: "#eee",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+          onClick={handleImportAllTabs}
+          title="Importar abas"
+        >Importar abas</button>
+      </div>
+      {/* Barra de menu superior */}
       <TopMenuBar
           onSave={() => handleTest("onSave")}
           onExport={handleExport}
@@ -317,6 +612,7 @@ function handleExample(modelName) {
           // onTogglePanels={() => setPanelsVisible((v) => !v)}
           // panelsVisible={panelsVisible}
         />
+        {/* ReactFlow da aba ativa */}
       <ReactFlow
         ref={ref}
         nodes={nodes} // armazena os nodes dos recursos
