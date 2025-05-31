@@ -25,6 +25,9 @@ import ContextMenu from '@/components/ContextMenu/ContextMenu';
 // ResourceConfigPanel
 import ResourceConfigPanel from './components/panels/ResourceConfigPanel';
 import TopMenuBar from './components/panels/TopMenuBar';
+import { predefinedModels } from '@/constants'; 
+import ExamplesModal from './components/panels/ExamplesModal';
+
 // group nodes
 import Account from '@/components/nodes/Groups/Account'
 import VPC from '@/components/nodes/Groups/VPC'
@@ -71,7 +74,7 @@ export default function FlowEditor({ initialState, componentsList }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
 
   const [configPanelNodeId, setConfigPanelNodeId] = useState<string | null>(null);
-
+  const [showExamples, setShowExamples] = React.useState(false);
 
   // Atualize os refs sempre que mudarem
   React.useEffect(() => {
@@ -223,6 +226,78 @@ function handleTest(msg) {
   alert(`Exemplo de alerta: você clicou em ${msg}!`);
 }
 
+// Função para exportar o estado atual (nodes e edges)
+function handleExport() {
+  const exportData = {
+    nodes,
+    edges,
+  };
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", "flow-export.json");
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
+// Função para importar um estado e exibir na tela
+function handleImport() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const json = JSON.parse(evt.target.result);
+        if (json.nodes && json.edges) {
+          setNodes(json.nodes);
+          setEdges(json.edges);
+        } else {
+          alert("Arquivo inválido: não contém nodes e edges.");
+        }
+      } catch (err) {
+        alert("Erro ao importar arquivo: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// Função para importar um modelo predefinido pelo nome
+function handleExample(modelName) {
+  const model = predefinedModels[modelName];
+  if (!model) {
+    alert("Modelo não encontrado!");
+    return;
+  }
+  if (model.nodes && model.edges) {
+    setNodes(model.nodes);
+    setEdges(model.edges);
+  } else {
+    alert("Modelo inválido: não contém nodes e edges.");
+  }
+}
+
+  function handleExampleOpen() {
+    setShowExamples(true);
+  }
+
+  function handleExampleSelect(modelName) {
+    const model = predefinedModels[modelName];
+    if (model && model.nodes && model.edges) {
+      setNodes(model.nodes);
+      setEdges(model.edges);
+      setShowExamples(false);
+    } else {
+      alert("Modelo inválido!");
+    }
+  }
+
   return (
     <div style={{
       width: '100vw',
@@ -234,9 +309,9 @@ function handleTest(msg) {
     }}>
       <TopMenuBar
           onSave={() => handleTest("onSave")}
-          onExport={() => handleTest("onSave")}
-          onImport={() => handleTest("onSave")}
-          onExample={() => handleTest("onSave")}
+          onExport={handleExport}
+          onImport={handleImport}
+          onExample={handleExampleOpen}
           // onToggleLabels={() => setShowLabels((v) => !v)}
           // labelsVisible={showLabels}
           // onTogglePanels={() => setPanelsVisible((v) => !v)}
@@ -278,7 +353,13 @@ function handleTest(msg) {
           />
         )}
         {menu && <ContextMenu onClick={onPaneClick} {...menu} />}
-        
+        {showExamples && (
+        <ExamplesModal
+          models={predefinedModels}
+          onSelect={handleExampleSelect}
+          onClose={() => setShowExamples(false)}
+        />
+      )}
       </ReactFlow>
       
     </div>

@@ -1,4 +1,7 @@
-enum Architectures  {
+
+
+
+enum Architectures {
     X86 = "x86_64",
     ARM = "arm64",
 }
@@ -63,9 +66,269 @@ interface LambdaProperties {
 }
 
 export const defaultLambdaProperties: LambdaProperties = {
-  FunctionName: "MyLambda",
-  Runtime: Runtime.NODE22,
-  Role: "",
-  MemorySize: 128,
-  Timeout: 3,
+    FunctionName: "MyLambda",
+    Runtime: Runtime.NODE22,
+    Role: "",
+    MemorySize: 128,
+    Timeout: 3,
+};
+
+// --- EC2 Instance ---
+export interface EC2InstanceProperties {
+    InstanceId?: string;
+    InstanceType: string;
+    AmiId: string;
+    KeyName?: string;
+    SubnetId?: string;
+    SecurityGroupIds?: string[];
+    Tags?: Record<string, string>;
+}
+
+export const defaultEC2InstanceProperties: EC2InstanceProperties = {
+    InstanceType: "t3.micro",
+    AmiId: "",
+    KeyName: "",
+    SubnetId: "",
+    SecurityGroupIds: [],
+    Tags: {},
+};
+
+// --- S3 Bucket ---
+export interface S3BucketProperties {
+    BucketName: string;
+    Versioning?: boolean;
+    Encryption?: boolean;
+    Tags?: Record<string, string>;
+}
+
+export const defaultS3BucketProperties: S3BucketProperties = {
+    BucketName: "my-bucket",
+    Versioning: false,
+    Encryption: false,
+    Tags: {},
+};
+
+// --- RDS MySQL Instance ---
+export interface RDSMySQLInstanceProperties {
+    DBInstanceIdentifier: string;
+    DBInstanceClass: string;
+    Engine: "mysql";
+    EngineVersion?: string;
+    MasterUsername: string;
+    MasterUserPassword?: string;
+    AllocatedStorage: number;
+    VpcSecurityGroupIds?: string[];
+    DBSubnetGroupName?: string;
+    Tags?: Record<string, string>;
+}
+
+export const defaultRDSMySQLInstanceProperties: RDSMySQLInstanceProperties = {
+    DBInstanceIdentifier: "mysql-instance",
+    DBInstanceClass: "db.t3.micro",
+    Engine: "mysql",
+    EngineVersion: "8.0",
+    MasterUsername: "admin",
+    MasterUserPassword: "",
+    AllocatedStorage: 20,
+    VpcSecurityGroupIds: [],
+    DBSubnetGroupName: "",
+    Tags: {},
+};
+
+// --- RDS MariaDB Instance ---
+export interface RDSMariaDBInstanceProperties {
+    DBInstanceIdentifier: string;
+    DBInstanceClass: string;
+    Engine: "mariadb";
+    EngineVersion?: string;
+    MasterUsername: string;
+    MasterUserPassword?: string;
+    AllocatedStorage: number;
+    VpcSecurityGroupIds?: string[];
+    DBSubnetGroupName?: string;
+    Tags?: Record<string, string>;
+}
+
+export const defaultRDSMariaDBInstanceProperties: RDSMariaDBInstanceProperties = {
+    DBInstanceIdentifier: "mariadb-instance",
+    DBInstanceClass: "db.t3.micro",
+    Engine: "mariadb",
+    EngineVersion: "10.6",
+    MasterUsername: "admin",
+    MasterUserPassword: "",
+    AllocatedStorage: 20,
+    VpcSecurityGroupIds: [],
+    DBSubnetGroupName: "",
+    Tags: {},
+};
+
+// --- RDS PostgreSQL Instance ---
+export interface RDSPostgresInstanceProperties {
+    DBInstanceIdentifier: string;
+    DBInstanceClass: string;
+    Engine: "postgres";
+    EngineVersion?: string;
+    MasterUsername: string;
+    MasterUserPassword?: string;
+    AllocatedStorage: number;
+    VpcSecurityGroupIds?: string[];
+    DBSubnetGroupName?: string;
+    Tags?: Record<string, string>;
+}
+
+export const defaultRDSPostgresInstanceProperties: RDSPostgresInstanceProperties = {
+    DBInstanceIdentifier: "postgres-instance",
+    DBInstanceClass: "db.t3.micro",
+    Engine: "postgres",
+    EngineVersion: "15",
+    MasterUsername: "admin",
+    MasterUserPassword: "",
+    AllocatedStorage: 20,
+    VpcSecurityGroupIds: [],
+    DBSubnetGroupName: "",
+    Tags: {},
+};
+
+// --- VPC ---
+export interface VPCProperties {
+    VpcId?: string;
+    CidrBlock: string;
+    EnableDnsSupport?: boolean;
+    EnableDnsHostnames?: boolean;
+    Tags?: Record<string, string>;
+}
+
+export const defaultVPCProperties: VPCProperties = {
+    VpcId: "",
+    CidrBlock: "10.0.0.0/16",
+    EnableDnsSupport: true,
+    EnableDnsHostnames: true,
+    Tags: {},
+};
+
+// --- Account ---
+export interface AccountProperties {
+    AccountId: string;
+    AccountName?: string;
+    Email?: string;
+}
+
+export const defaultAccountProperties: AccountProperties = {
+    AccountId: "",
+    AccountName: "",
+    Email: "",
+};
+
+// --- Private Subnet ---
+export interface PrivateSubnetProperties {
+    SubnetId?: string;
+    VpcId?: string;
+    CidrBlock: string;
+    AvailabilityZone?: string;
+    Tags?: Record<string, string>;
+}
+
+export const defaultPrivateSubnetProperties: PrivateSubnetProperties = {
+    SubnetId: "",
+    VpcId: "",
+    CidrBlock: "10.0.1.0/24",
+    AvailabilityZone: "",
+    Tags: {},
+};
+
+// --- Public Subnet ---
+export interface PublicSubnetProperties {
+    SubnetId?: string;
+    VpcId?: string;
+    CidrBlock: string;
+    AvailabilityZone?: string;
+    MapPublicIpOnLaunch?: boolean;
+    Tags?: Record<string, string>;
+}
+
+export const defaultPublicSubnetProperties: PublicSubnetProperties = {
+    SubnetId: "",
+    VpcId: "",
+    CidrBlock: "10.0.2.0/24",
+    AvailabilityZone: "",
+    MapPublicIpOnLaunch: true,
+    Tags: {},
+};
+
+
+// Exemplo de estrutura no arquivo de constantes (constants/index.tsx):
+
+export const predefinedModels = {
+  exemplo1: {
+    nodes: [
+    {
+    id: 'account',
+    type: 'account',
+    data: { label: 'account' },
+    position: { x: 0, y: 0 },
+    style: {
+      width: 1000,
+      height: 500,
+    },
+  },
+    {
+    id: 'vpc',
+    type: 'vpc',
+    data: { label: 'vpc' },
+    position: { x: 40, y: 40 },
+    style: {
+      width: 800,
+      height: 450,
+    },
+    parentId: 'account',
+    extent: 'parent',
+  },
+      {
+    id: 'subnetprivate',
+    type: 'subnetprivate',
+    data: { label: 'subnet privada' },
+    position: { x: 40, y: 40 },
+    style: {
+      width: 350,
+      height: 400,
+    },
+    parentId: 'vpc',
+    extent: 'parent',
+  },
+        {
+    id: 'subnetpublic',
+    type: 'subnetpublic',
+    data: { label: 'subnet pública' },
+    position: { x: 420, y: 40 },
+    style: {
+      width: 350,
+      height: 400,
+    },
+    parentId: 'vpc',
+    extent: 'parent',
+  },
+
+  {
+    id: 'B',
+    type: 'instance',
+    data: { label: 'instance node 1' },
+    position: { x: 40, y: 40 },
+    parentId: 'subnetprivate',
+    extent: 'parent',
+  },
+  {
+    id: 'C',
+    type: 'instance',
+    data: { label: 'instance node 2' },
+    position: { x: 40, y: 40 },
+    parentId: 'subnetpublic',
+    extent: 'parent',
+  },
+  ],
+  edges: [],
+  },
+  exemplo2: {
+    nodes: [  ],
+    edges: [  ]
+  }
 };
