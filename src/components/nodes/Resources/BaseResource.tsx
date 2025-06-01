@@ -1,7 +1,22 @@
 import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { AlertCircle, MessageSquare, Link2Off, Link } from 'lucide-react'; // Exemplo de ícones, ajuste conforme sua lib
 
-const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
+const ICON_SIZE = 12;
+
+const BaseResource = ({
+  data,
+  isConnectable,
+  icon: Icon,
+  label,
+  alertType,
+  alertColor = "#e53935",
+  commentIconVisible,
+  commentColor = "#1976d2",
+  noInputIconVisible,
+  noOutputIconVisible,
+  iconVisibility = true,
+}) => {
   const [showHandles, setShowHandles] = useState(false);
   return (
     <div
@@ -16,6 +31,40 @@ const BaseResource = ({ data, isConnectable, icon: Icon, label }) => {
       onMouseEnter={() => setShowHandles(true)}
       onMouseLeave={() => setShowHandles(false)}
     >
+      {/* Ícone de alerta no topo direito */}
+      {iconVisibility && (
+        <div style={{
+          position: "absolute",
+          top: 2,
+          right: 2,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 2,
+          zIndex: 10,
+        }}>
+          {/* Alerta de configuração */}
+          {alertType === "error" && (
+            <AlertCircle size={ICON_SIZE} color={alertColor} title="Configuração inválida" />
+          )}
+          {/* Comentário relevante */}
+          {commentIconVisible && (
+            <span title={comment || "Comentário relevante"}>
+              <MessageSquare size={ICON_SIZE} color={commentColor} />
+            </span>
+          )}
+          {/* Sem conexão de entrada */}
+          {noInputIconVisible && (
+            <Link2Off size={ICON_SIZE} color="#ff9800" title="Sem conexão de entrada" />
+          )}
+          {/* Sem conexão de saída */}
+          {noOutputIconVisible && (
+            <Link size={ICON_SIZE} color="#ff9800" style={{ transform: "rotate(180deg)" }} title="Sem conexão de saída" />
+          )}
+        </div>
+      )}
+
+
       {/* Ícone centralizado */}
       <div>
         {Icon && <Icon size={32} />}

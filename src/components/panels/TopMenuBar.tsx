@@ -40,16 +40,31 @@ const dropdownItemStyle = {
   fontSize: 13,
 };
 
-export default function TopMenuBar({
+interface TopMenuBarProps {
+  onSave: () => void;
+  onExport: () => void;
+  onImport: () => void;
+  onExample: () => void;
+  onToggleIcons: () => void;
+  iconsVisible: boolean;
+  onExportAllTabs: () => void;      // ADICIONE ESTA LINHA
+  onImportAllTabs: () => void;      // ADICIONE ESTA LINHA
+  onExportDrawio: () => void;      // ADICIONE ESTA LINHA
+  onExportAllDrawio: () => void;   // ADICIONE ESTA LINHA
+}
+
+const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onSave,
   onExport,
   onImport,
   onExample,
-  onToggleLabels,
-  labelsVisible,
-  onTogglePanels,
-  panelsVisible,
-}) {
+  onToggleIcons,
+  iconsVisible,
+  onExportAllTabs,    // ADICIONE ESTA LINHA
+  onImportAllTabs,    // ADICIONE ESTA LINHA
+  onExportDrawio,        // Adicione esta linha
+  onExportAllDrawio,     // Adicione esta linha
+}) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const menuTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -74,8 +89,12 @@ export default function TopMenuBar({
         {openMenu === "file" && (
           <div style={dropdownStyle}>
             <div style={dropdownItemStyle} onClick={onSave}>Salvar</div>
+            <div style={dropdownItemStyle} onClick={onExportAllTabs}>Exportar abas</div>
+            <div style={dropdownItemStyle} onClick={onImportAllTabs}>Importar abas</div>
             <div style={dropdownItemStyle} onClick={onExport}>Exportar</div>
             <div style={dropdownItemStyle} onClick={onImport}>Importar</div>
+            <div style={dropdownItemStyle} onClick={onExportDrawio}>Exportar aba para draw.io</div>
+            <div style={dropdownItemStyle} onClick={onExportAllDrawio}>Exportar todas abas para draw.io</div>
             <div style={dropdownItemStyle} onClick={onExample}>Exemplos</div>
           </div>
         )}
@@ -90,15 +109,20 @@ export default function TopMenuBar({
         <span style={{ cursor: "pointer", fontWeight: 500 }}>Edit</span>
         {openMenu === "edit" && (
           <div style={dropdownStyle}>
-            <div style={dropdownItemStyle} onClick={onToggleLabels}>
+            {/* <div style={dropdownItemStyle} onClick={onToggleLabels}>
               {labelsVisible ? "Ocultar nomes" : "Exibir nomes"}
             </div>
             <div style={dropdownItemStyle} onClick={onTogglePanels}>
               {panelsVisible ? "Ocultar painéis" : "Exibir painéis"}
-            </div>
+            </div> */}
+            <div style={dropdownItemStyle} onClick={onToggleIcons}>
+          {iconsVisible ? "Ocultar ícones de alerta" : "Exibir ícones de alerta"}
+        </div>
           </div>
         )}
       </div>
     </div>
   );
 }
+
+export default TopMenuBar;

@@ -1,12 +1,12 @@
 
 
 
-enum Architectures {
+export enum Architectures {
     X86 = "x86_64",
     ARM = "arm64",
 }
 
-enum Runtime {
+export enum Runtime {
     NODE22 = "nodejs22.x",
     NODE20 = "nodejs20.x",
     NODE18 = "nodejs18.x",

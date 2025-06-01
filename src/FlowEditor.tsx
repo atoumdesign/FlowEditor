@@ -25,7 +25,7 @@ import ContextMenu from '@/components/ContextMenu/ContextMenu';
 // ResourceConfigPanel
 import ResourceConfigPanel from './components/panels/ResourceConfigPanel';
 import TopMenuBar from './components/panels/TopMenuBar';
-import { predefinedModels } from '@/constants'; 
+import { predefinedModels } from '@/constants';
 import ExamplesModal from './components/panels/ExamplesModal';
 
 // group nodes
@@ -41,23 +41,22 @@ import MariaDBInstance from './components/nodes/Resources/Database/MariaDBInstan
 import MySQLInstance from './components/nodes/Resources/Database/MySQLInstance';
 import PostgreSQLInstance from './components/nodes/Resources/Database/PostgreSQLInstance';
 
-const nodeTypes = {
-  account: Account,
-  vpc: VPC,
-  subnetprivate: PrivateSubnet,
-  subnetpublic: PublicSubnet,
-  lambdaFunction: LambdaFunction,
-  bucket: Bucket,
-  instance: Instance,
-  mariaDBInstance: MariaDBInstance,
-  mySQLInstance: MySQLInstance,
-  postgreSQLInstance: PostgreSQLInstance
-};
+import Styles from "@/styles"
+import TabsBar from '@/components/panels/TabsBar';
+
+import { exportTabToDrawioXml, exportAllTabsToDrawioXml } from '@/utils/drawioExport';
+
+import {
+  exportFlowState,
+  importFlowState,
+  exportAllTabs,
+  importAllTabs
+} from './utils/fileStateUtils';
 
 const defaultEdgeOptions = {
   zIndex: 2000,
+  type: 'step'
 }
-
 
 // Gera nodeTypes dinamicamente a partir do componentsList, se necessário
 // const nodeTypes = Object.fromEntries(
@@ -79,6 +78,7 @@ export default function FlowEditor({ initialState, componentsList }) {
 
   const [configPanelNodeId, setConfigPanelNodeId] = useState<string | null>(null);
   const [showExamples, setShowExamples] = React.useState(false);
+  const [showAlertIcons, setShowAlertIcons] = useState(true);
 
   // Estado para múltiplas abas
   const [tabs, setTabs] = useState([
@@ -95,6 +95,24 @@ export default function FlowEditor({ initialState, componentsList }) {
 
   // Helpers para encontrar e atualizar a aba ativa
   const activeTab = tabs.find(tab => tab.id === activeTabId);
+
+
+  const nodeTypes = React.useMemo(() => ({
+    account: (props) => <Account {...props} iconVisibility={showAlertIcons} />,
+    vpc: (props) => <VPC {...props} iconVisibility={showAlertIcons} />,
+    subnetprivate: (props) => <PrivateSubnet {...props} iconVisibility={showAlertIcons} />,
+    subnetpublic: (props) => <PublicSubnet {...props} iconVisibility={showAlertIcons} />,
+    lambdaFunction: (props) => <LambdaFunction {...props} iconVisibility={showAlertIcons} />,
+    bucket: (props) => <Bucket {...props} iconVisibility={showAlertIcons} />,
+    instance: (props) => <Instance {...props} iconVisibility={showAlertIcons} />,
+    mariaDBInstance: (props) => <MariaDBInstance {...props} iconVisibility={showAlertIcons} />,
+    mySQLInstance: (props) => <MySQLInstance {...props} iconVisibility={showAlertIcons} />,
+    postgreSQLInstance: (props) => <PostgreSQLInstance {...props} iconVisibility={showAlertIcons} />,
+  }), [showAlertIcons]);
+
+
+
+
 
   function updateActiveTabNodes(nodes) {
     setTabs(tabs =>
@@ -113,9 +131,27 @@ export default function FlowEditor({ initialState, componentsList }) {
 
 
 
-// Hooks do ReactFlow para a aba ativa
+  // Hooks do ReactFlow para a aba ativa
   const [nodes, setNodes, onNodesChange] = useNodesState(activeTab?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(activeTab?.edges || []);
+
+
+  React.useEffect(() => {
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => {
+        const hasInput = edges.some(e => e.target === node.id);
+        const hasOutput = edges.some(e => e.source === node.id);
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            noInputIconVisible: !hasInput,
+            noOutputIconVisible: !hasOutput,
+          },
+        };
+      })
+    );
+  }, [edges, setNodes]);
 
 
   // Sincroniza nodes/edges do ReactFlow com a aba ativa
@@ -130,7 +166,7 @@ export default function FlowEditor({ initialState, componentsList }) {
       updateActiveTabNodes(nodes);
       updateActiveTabEdges(edges);
     }
-     
+
   }, [nodes, edges]);
 
 
@@ -234,12 +270,12 @@ export default function FlowEditor({ initialState, componentsList }) {
   const onNodeDragStop: OnNodeDrag = useCallback(
     (event, dragNode) => {
 
-      if(
+      if (
         dragNode.type === 'account' ||
         dragNode.type === 'vpc' ||
         dragNode.type === 'subnetprivate' ||
         dragNode.type === 'subnetpublic'
-      ){
+      ) {
         return
       }
       const overlappingNode = overlappingNodeRef.current;
@@ -264,7 +300,7 @@ export default function FlowEditor({ initialState, componentsList }) {
           return updatedNodes;
         })
       }
-       else {
+      else {
         setNodes((prevNodes) =>
           prevNodes.map((node) => {
             if (node.id === dragNode.id) {
@@ -284,65 +320,18 @@ export default function FlowEditor({ initialState, componentsList }) {
 
   // fim - adicionar node como filho /////////////////////////////////////////////////////
 
-function handleTest(msg) {
-  alert(`Exemplo de alerta: você clicou em ${msg}!`);
-}
+  function handleTest(msg) {
+    alert(`Exemplo de alerta: você clicou em ${msg}!`);
+  }
 
-// Função para exportar o estado atual (nodes e edges)
+// Para exportar o fluxo atual
 function handleExport() {
-  const exportData = {
-    nodes,
-    edges,
-  };
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-  const downloadAnchorNode = document.createElement('a');
-  downloadAnchorNode.setAttribute("href", dataStr);
-  downloadAnchorNode.setAttribute("download", "flow-export.json");
-  document.body.appendChild(downloadAnchorNode);
-  downloadAnchorNode.click();
-  downloadAnchorNode.remove();
+  exportFlowState(nodes, edges);
 }
 
-// Função para importar um estado e exibir na tela
+// Para importar um fluxo
 function handleImport() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json,application/json';
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const json = JSON.parse(evt.target.result);
-        if (json.nodes && json.edges) {
-          setNodes(json.nodes);
-          setEdges(json.edges);
-        } else {
-          alert("Arquivo inválido: não contém nodes e edges.");
-        }
-      } catch (err) {
-        alert("Erro ao importar arquivo: " + err.message);
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-}
-
-// Função para importar um modelo predefinido pelo nome
-function handleExample(modelName) {
-  const model = predefinedModels[modelName];
-  if (!model) {
-    alert("Modelo não encontrado!");
-    return;
-  }
-  if (model.nodes && model.edges) {
-    setNodes(model.nodes);
-    setEdges(model.edges);
-  } else {
-    alert("Modelo inválido: não contém nodes e edges.");
-  }
+  importFlowState(setNodes, setEdges);
 }
 
   function handleExampleOpen() {
@@ -360,54 +349,15 @@ function handleExample(modelName) {
     }
   }
 
-    // Exporta todas as abas em um único arquivo
-  function handleExportAllTabs() {
-    const exportData = tabs.map(tab => ({
-      id: tab.id,
-      name: tab.name,
-      nodes: tab.nodes,
-      edges: tab.edges,
-    }));
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "flow-multi-tabs-export.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  }
+// Para exportar todas as abas
+function handleExportAllTabs() {
+  exportAllTabs(tabs);
+}
 
-  // Importa várias abas de um arquivo
-  function handleImportAllTabs() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const json = JSON.parse(evt.target.result);
-          if (Array.isArray(json) && json[0]?.nodes && json[0]?.edges) {
-            setTabs(json.map((tab, idx) => ({
-              id: tab.id || `tab-${idx + 1}`,
-              name: tab.name || `Fluxo ${idx + 1}`,
-              nodes: tab.nodes,
-              edges: tab.edges,
-            })));
-            setActiveTabId(json[0].id || 'tab-1');
-          } else {
-            alert("Arquivo inválido: não contém abas válidas.");
-          }
-        } catch (err) {
-          alert("Erro ao importar arquivo: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  }
+// Para importar todas as abas
+function handleImportAllTabs() {
+  importAllTabs(setTabs, setActiveTabId);
+}
 
   // Adiciona uma nova aba
   function handleAddTab() {
@@ -456,7 +406,7 @@ function handleExample(modelName) {
     }
   }
 
-    // Função para iniciar edição
+  // Função para iniciar edição
   function handleStartEditTab(tabId: string, currentName: string) {
     setEditingTabId(tabId);
     setEditingTabName(currentName);
@@ -480,139 +430,50 @@ function handleExample(modelName) {
     setEditingTabName("");
   }
 
+  function handleExportTabToDrawio() {
+  const tab = tabs.find(tab => tab.id === activeTabId);
+  if (tab) exportTabToDrawioXml(tab, `${tab.name}.drawio.xml`);
+}
+
+function handleExportAllTabsToDrawio() {
+  exportAllTabsToDrawioXml(tabs, "flow-multitabs.drawio.xml");
+}
+
   return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      flexDirection: 'column',
-      display: 'flex',
-      paddingTop: 36,
-      boxSizing: 'border-box'
-    }}>
+    <div style={Styles.Global.Background}>
 
       {/* Abas */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        background: "#f8f8f8",
-        borderBottom: "1px solid #ddd",
-        height: 32,
-        paddingLeft: 8,
-        zIndex: 99,
-      }}>
-        {tabs.map(tab => (
-          <div
-            key={tab.id}
-            style={{
-              padding: "6px 18px",
-              marginRight: 4,
-              background: tab.id === activeTabId ? "#fff" : "#eee",
-              border: tab.id === activeTabId ? "1px solid #bbb" : "1px solid #ddd",
-              borderBottom: tab.id === activeTabId ? "none" : "1px solid #ddd",
-              borderRadius: "8px 8px 0 0",
-              cursor: "pointer",
-              position: "relative",
-              fontWeight: tab.id === activeTabId ? 600 : 400,
-            }}
-            onClick={() => setActiveTabId(tab.id)}
-            onDoubleClick={e => {
-              e.stopPropagation();
-              handleStartEditTab(tab.id, tab.name);
-            }}
-          >
-            {editingTabId === tab.id ? (
-              <input
-                autoFocus
-                value={editingTabName}
-                onChange={e => setEditingTabName(e.target.value)}
-                onBlur={handleSaveTabName}
-                onKeyDown={e => {
-                  if (e.key === "Enter") handleSaveTabName();
-                  if (e.key === "Escape") handleCancelEditTab();
-                }}
-                style={{
-                  fontSize: 14,
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "1px solid #bbb",
-                  minWidth: 60,
-                }}
-              />
-            ) : (
-              tab.name
-            )}
-            {tabs.length > 1 && (
-              <span
-                style={{
-                  marginLeft: 8,
-                  color: "#888",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-                onClick={e => {
-                  e.stopPropagation();
-                  handleCloseTab(tab.id);
-                }}
-                title="Fechar aba"
-              >×</span>
-            )}
-          </div>
-        ))}
-        <button
-          style={{
-            marginLeft: 8,
-            padding: "2px 10px",
-            fontSize: 18,
-            border: "none",
-            background: "#eee",
-            borderRadius: 6,
-            cursor: "pointer",
-            fontWeight: 700,
-          }}
-          onClick={handleAddTab}
-          title="Nova aba"
-        >+</button>
-        <button
-          style={{
-            marginLeft: 16,
-            padding: "2px 10px",
-            fontSize: 14,
-            border: "none",
-            background: "#eee",
-            borderRadius: 6,
-            cursor: "pointer",
-            fontWeight: 700,
-          }}
-          onClick={handleExportAllTabs}
-          title="Exportar todas as abas"
-        >Exportar abas</button>
-        <button
-          style={{
-            marginLeft: 8,
-            padding: "2px 10px",
-            fontSize: 14,
-            border: "none",
-            background: "#eee",
-            borderRadius: 6,
-            cursor: "pointer",
-            fontWeight: 700,
-          }}
-          onClick={handleImportAllTabs}
-          title="Importar abas"
-        >Importar abas</button>
-      </div>
+      <TabsBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        editingTabId={editingTabId}
+        editingTabName={editingTabName}
+        onTabClick={setActiveTabId}
+        onTabDoubleClick={handleStartEditTab}
+        onTabClose={handleCloseTab}
+        onAddTab={handleAddTab}
+        onEditTabNameChange={setEditingTabName}
+        onSaveTabName={handleSaveTabName}
+        onCancelEditTab={handleCancelEditTab}
+      />
       {/* Barra de menu superior */}
       <TopMenuBar
-          onSave={() => handleTest("onSave")}
-          onExport={handleExport}
-          onImport={handleImport}
-          onExample={handleExampleOpen}
-          // onToggleLabels={() => setShowLabels((v) => !v)}
-          // labelsVisible={showLabels}
-          // onTogglePanels={() => setPanelsVisible((v) => !v)}
-          // panelsVisible={panelsVisible}
-        />
-        {/* ReactFlow da aba ativa */}
+        onSave={() => handleTest("onSave")}
+        onExport={handleExport}
+        onImport={handleImport}
+        onExample={handleExampleOpen}
+        onToggleIcons={() => setShowAlertIcons(v => !v)}
+        iconsVisible={showAlertIcons}
+        onExportAllTabs={handleExportAllTabs}    // ADICIONE ESTA LINHA
+        onImportAllTabs={handleImportAllTabs}    // ADICIONE ESTA LINHA
+        onExportDrawio={handleExportTabToDrawio}
+        onExportAllDrawio={handleExportAllTabsToDrawio}
+      // onToggleLabels={() => setShowLabels((v) => !v)}
+      // labelsVisible={showLabels}
+      // onTogglePanels={() => setPanelsVisible((v) => !v)}
+      // panelsVisible={panelsVisible}
+      />
+      {/* ReactFlow da aba ativa */}
       <ReactFlow
         ref={ref}
         nodes={nodes} // armazena os nodes dos recursos
@@ -650,14 +511,14 @@ function handleExample(modelName) {
         )}
         {menu && <ContextMenu onClick={onPaneClick} {...menu} />}
         {showExamples && (
-        <ExamplesModal
-          models={predefinedModels}
-          onSelect={handleExampleSelect}
-          onClose={() => setShowExamples(false)}
-        />
-      )}
+          <ExamplesModal
+            models={predefinedModels}
+            onSelect={handleExampleSelect}
+            onClose={() => setShowExamples(false)}
+          />
+        )}
       </ReactFlow>
-      
+
     </div>
   );
 }
