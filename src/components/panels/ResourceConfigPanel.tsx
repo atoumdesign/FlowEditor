@@ -43,13 +43,17 @@ function getEnumOptions(enumObj) {
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 540;
 
-export default function ResourceConfigPanel({ nodeId, onClose }) {
+export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
   const { getNode, setNodes } = useReactFlow();
   const node = getNode(nodeId);
 
   // Estado local para as propriedades
   const [localProperties, setLocalProperties] = useState(node?.data?.Properties || {});
 
+  // Estado para ação de duplo clique
+  const initialAction = node?.data?.onDoubleClickAction || { type: "tab", value: "" };
+  const [actionType, setActionType] = useState(initialAction.type);
+  const [actionValue, setActionValue] = useState(initialAction.value);
 
   // Função para salvar as propriedades editadas
   const handleSaveProperties = () => {
@@ -57,15 +61,18 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
       nds.map((n) =>
         n.id === nodeId
           ? {
-              ...n,
-              data: {
-                ...n.data,
-                Properties: {
-                  ...n.data?.Properties,
-                  ...localProperties, // Inclui showCommentIcon e comment
-                },
+            ...n,
+            data: {
+              ...n.data,
+              Properties: {
+                ...n.data?.Properties,
+                ...localProperties, // Inclui showCommentIcon e comment
               },
-            }
+              onDoubleClickAction: actionType === "tab"
+                ? { type: "tab", value: actionValue }
+                : { type: "url", value: actionValue }
+            },
+          }
           : n
       )
     );
@@ -99,7 +106,7 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
     setNodes((nds) =>
       nds.map((n) =>
         n.id === nodeId
-          ? { ...n, data: { ...n.data, Properties: { ...localProperties }  } }
+          ? { ...n, data: { ...n.data, Properties: { ...localProperties } } }
           : n
       )
     );
@@ -147,8 +154,8 @@ export default function ResourceConfigPanel({ nodeId, onClose }) {
   // Garante que só renderiza as propriedades existentes no node atual
   // const propertyKeys = Object.keys(localProperties);
   const nodeType = node?.type;
-const defaultProperties = defaultPropertiesMap[nodeType] || {};
-const propertyKeys = Object.keys({ ...defaultProperties, ...localProperties });
+  const defaultProperties = defaultPropertiesMap[nodeType] || {};
+  const propertyKeys = Object.keys({ ...defaultProperties, ...localProperties });
 
   return (
     <>
@@ -254,120 +261,158 @@ const propertyKeys = Object.keys({ ...defaultProperties, ...localProperties });
           ))}
         </div> */}
         <div style={{ margin: "16px 0" }}>
-  <label style={{ fontWeight: 600 }}>Properties:</label>
-  {propertyKeys.length === 0 && (
-    <div style={{ color: "#888", fontSize: 13 }}>Nenhuma propriedade definida.</div>
-  )}
-  {propertyKeys.map((key) => {
-    const defaultValue = defaultProperties[key];
-    const value = localProperties[key] ?? defaultValue ?? "";
-    const isEnum =
-      (nodeType === "lambdaFunction" && key === "Runtime") ||
-      (nodeType === "lambdaFunction" && key === "Architectures");
-    const isRecord =
-      (typeof defaultValue === "object" && defaultValue !== null && !Array.isArray(defaultValue));
+          <label style={{ fontWeight: 600 }}>Properties:</label>
+          {propertyKeys.length === 0 && (
+            <div style={{ color: "#888", fontSize: 13 }}>Nenhuma propriedade definida.</div>
+          )}
+          {propertyKeys.map((key) => {
+            const defaultValue = defaultProperties[key];
+            const value = localProperties[key] ?? defaultValue ?? "";
+            const isEnum =
+              (nodeType === "lambdaFunction" && key === "Runtime") ||
+              (nodeType === "lambdaFunction" && key === "Architectures");
+            const isRecord =
+              (typeof defaultValue === "object" && defaultValue !== null && !Array.isArray(defaultValue));
 
-    return (
-      <div key={key} style={{ display: "flex", alignItems: "center", margin: "6px 0" }}>
-        <span style={{ width: "40%", minWidth: 80, fontWeight: 500 }}>{key}:</span>
-        <div style={{ width: "60%" }}>
-          {/* Enum: select */}
-          {isEnum && key === "Runtime" && (
-            <select
-              value={value}
-              onChange={e => handlePropertyChange(key, e.target.value)}
-              onBlur={commitProperties}
-              style={{ width: "100%" }}
-            >
-              {getEnumOptions(Runtime)}
-            </select>
-          )}
-          {isEnum && key === "Architectures" && (
-            <select
-              value={value}
-              onChange={e => handlePropertyChange(key, e.target.value)}
-              onBlur={commitProperties}
-              style={{ width: "100%" }}
-            >
-              {getEnumOptions(Architectures)}
-            </select>
-          )}
-          {/* Record<string, string>: pares chave/valor */}
-          {isRecord && !(isEnum) && (
-            <div>
-              {Object.entries(value || {}).map(([k, v]) => (
-                <div key={k} style={{ display: "flex", marginBottom: 2 }}>
-                  <input
-                    type="text"
-                    value={k}
-                    disabled
-                    style={{ width: "40%", marginRight: 4, background: "#f3f3f3", border: "1px solid #eee", borderRadius: 3, fontSize: 13 }}
-                  />
-                  <input
-                    type="text"
-                    value={v}
-                    onChange={e => {
-                      handlePropertyChange(key, { ...value, [k]: e.target.value });
-                    }}
-                    onBlur={commitProperties}
-                    style={{ width: "60%", fontSize: 13 }}
-                  />
+            return (
+              <div key={key} style={{ display: "flex", alignItems: "center", margin: "6px 0" }}>
+                <span style={{ width: "40%", minWidth: 80, fontWeight: 500 }}>{key}:</span>
+                <div style={{ width: "60%" }}>
+                  {/* Enum: select */}
+                  {isEnum && key === "Runtime" && (
+                    <select
+                      value={value}
+                      onChange={e => handlePropertyChange(key, e.target.value)}
+                      onBlur={commitProperties}
+                      style={{ width: "100%" }}
+                    >
+                      {getEnumOptions(Runtime)}
+                    </select>
+                  )}
+                  {isEnum && key === "Architectures" && (
+                    <select
+                      value={value}
+                      onChange={e => handlePropertyChange(key, e.target.value)}
+                      onBlur={commitProperties}
+                      style={{ width: "100%" }}
+                    >
+                      {getEnumOptions(Architectures)}
+                    </select>
+                  )}
+                  {/* Record<string, string>: pares chave/valor */}
+                  {isRecord && !(isEnum) && (
+                    <div>
+                      {Object.entries(value || {}).map(([k, v]) => (
+                        <div key={k} style={{ display: "flex", marginBottom: 2 }}>
+                          <input
+                            type="text"
+                            value={k}
+                            disabled
+                            style={{ width: "40%", marginRight: 4, background: "#f3f3f3", border: "1px solid #eee", borderRadius: 3, fontSize: 13 }}
+                          />
+                          <input
+                            type="text"
+                            value={v}
+                            onChange={e => {
+                              handlePropertyChange(key, { ...value, [k]: e.target.value });
+                            }}
+                            onBlur={commitProperties}
+                            style={{ width: "60%", fontSize: 13 }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Number */}
+                  {!isEnum && !isRecord && typeof defaultValue === "number" && (
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={e => handlePropertyChange(key, Number(e.target.value))}
+                      onBlur={commitProperties}
+                      style={{ width: "100%" }}
+                    />
+                  )}
+                  {/* String */}
+                  {!isEnum && !isRecord && typeof defaultValue === "string" && (
+                    <input
+                      type="text"
+                      value={value}
+                      onChange={e => handlePropertyChange(key, e.target.value)}
+                      onBlur={commitProperties}
+                      style={{ width: "100%" }}
+                    />
+                  )}
+                  {/* Boolean */}
+                  {!isEnum && !isRecord && typeof defaultValue === "boolean" && (
+                    <input
+                      type="checkbox"
+                      checked={!!value}
+                      onChange={e => handlePropertyChange(key, e.target.checked)}
+                      onBlur={commitProperties}
+                      style={{ transform: "scale(1.2)" }}
+                    />
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-          {/* Number */}
-          {!isEnum && !isRecord && typeof defaultValue === "number" && (
+              </div>
+            );
+          })}
+        </div>
+        <h4>Ação ao dar duplo clique</h4>
+        <div style={{ marginBottom: 12 }}>
+          <label>
             <input
-              type="number"
-              value={value}
-              onChange={e => handlePropertyChange(key, Number(e.target.value))}
-              onBlur={commitProperties}
-              style={{ width: "100%" }}
-            />
-          )}
-          {/* String */}
-          {!isEnum && !isRecord && typeof defaultValue === "string" && (
+              type="radio"
+              checked={actionType === "tab"}
+              onChange={() => setActionType("tab")}
+            /> Abrir Aba
+          </label>
+          <label style={{ marginLeft: 16 }}>
             <input
-              type="text"
-              value={value}
-              onChange={e => handlePropertyChange(key, e.target.value)}
-              onBlur={commitProperties}
-              style={{ width: "100%" }}
-            />
-          )}
-          {/* Boolean */}
-          {!isEnum && !isRecord && typeof defaultValue === "boolean" && (
+              type="radio"
+              checked={actionType === "url"}
+              onChange={() => setActionType("url")}
+            /> Abrir Link
+          </label>
+        </div>
+        {actionType === "tab" ? (
+          <select
+            value={actionValue}
+            onChange={e => setActionValue(e.target.value)}
+            style={{ width: "100%", marginBottom: 12 }}
+          >
+            <option value="">Selecione uma aba</option>
+            {tabs.map(tab => (
+              <option key={tab.id} value={tab.id}>{tab.name}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={actionValue}
+            onChange={e => setActionValue(e.target.value)}
+            placeholder="https://..."
+            style={{ width: "100%", marginBottom: 12 }}
+          />
+        )}
+        <div style={{ margin: "16px 0" }}>
+          <label>
             <input
               type="checkbox"
-              checked={!!value}
-              onChange={e => handlePropertyChange(key, e.target.checked)}
-              onBlur={commitProperties}
-              style={{ transform: "scale(1.2)" }}
+              checked={!!localProperties.showCommentIcon}
+              onChange={e => setLocalProperties(prev => ({ ...prev, showCommentIcon: e.target.checked }))}
             />
-          )}
+            Exibir ícone de comentário relevante
+          </label>
+          <textarea
+            value={localProperties.comment || ""}
+            onChange={e => setLocalProperties(prev => ({ ...prev, comment: e.target.value }))}
+            placeholder="Comentário relevante..."
+            style={{ width: "100%", minHeight: 40, marginTop: 4 }}
+          />
+          <button onClick={handleSaveProperties}>Salvar</button>
+          <button onClick={onClose} style={{ marginLeft: 8 }}>Cancelar</button>
         </div>
-      </div>
-    );
-  })}
-</div>
-<div style={{ margin: "16px 0" }}>
-  <label>
-    <input
-      type="checkbox"
-      checked={!!localProperties.showCommentIcon}
-      onChange={e => setLocalProperties(prev => ({ ...prev, showCommentIcon: e.target.checked }))}
-    />
-    Exibir ícone de comentário relevante
-  </label>
-  <textarea
-    value={localProperties.comment || ""}
-    onChange={e => setLocalProperties(prev => ({ ...prev, comment: e.target.value }))}
-    placeholder="Comentário relevante..."
-    style={{ width: "100%", minHeight: 40, marginTop: 4 }}
-  />
-  <button onClick={handleSaveProperties}>Salvar</button>
-</div>
         <pre style={{ background: "#f8f8f8", padding: 8, borderRadius: 4 }}>
           {JSON.stringify(node.data, null, 2)}
         </pre>

@@ -3,7 +3,7 @@ import { onDragStart } from "./DragAndDrop"
 import { Accordion }  from '@blendmesh/components-ui'
 import React, { useRef, useState } from "react"
 
-export default function ResourcesPanel({componentsList}) {
+export default function ResourcesPanel({componentsList, showLabels, setShowLabels}) {
     const panelRef = useRef<HTMLDivElement>(null)
     const [width, setWidth] = useState(150)
     const minWidth = 220
@@ -11,7 +11,7 @@ export default function ResourcesPanel({componentsList}) {
     const resizing = useRef(false)
     const startX = useRef(0)
     const startWidth = useRef(width)
-    const [showLabels, setShowLabels] = useState(true)
+    // const [showLabels, setShowLabels] = useState(true)
 
     const onMouseDown = (e: React.MouseEvent) => {
         resizing.current = true
@@ -121,7 +121,7 @@ export default function ResourcesPanel({componentsList}) {
                     onMouseDown={onMouseDown}
                 />
 
-                <button
+                {/* <button
                     onClick={() => setShowLabels((v) => !v)}
                     style={{
                         marginBottom: 8,
@@ -135,7 +135,7 @@ export default function ResourcesPanel({componentsList}) {
                     }}
                 >
                     {showLabels ? "Ocultar nomes" : "Mostrar nomes"}
-                </button>
+                </button> */}
             </div>
         </Panel>
     )
