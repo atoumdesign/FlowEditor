@@ -58,6 +58,10 @@ import { exportTabToDrawioXml, exportAllTabsToDrawioXml } from '@/utils/drawioEx
 import { exportCurrentFlowToPDF, exportAllTabsToPDF } from './utils/exportPdfUtils';
 import { togglePanelsAndGrid } from './utils/togglePanelsAndGrid';
 
+import Project3DMap from './components/presentation/Project3DMap';
+
+
+
 import {
   exportFlowState,
   importFlowState,
@@ -84,10 +88,12 @@ export default function FlowEditor({ initialState, componentsList }) {
   // const [nodes, setNodes, onNodesChange] = useNodesState(initialState.nodes);
   // const [edges, setEdges, onEdgesChange] = useEdgesState(initialState.edges);
 
-const flowAreaRef = useRef<HTMLDivElement>(null);
-const [panelsHidden, setPanelsHidden] = useState(false);
+  const [view3D, setView3D] = useState(false);
 
-const [statePanelVisible, setStatePanelVisible] = useState(true);
+  const flowAreaRef = useRef<HTMLDivElement>(null);
+  const [panelsHidden, setPanelsHidden] = useState(false);
+
+  const [statePanelVisible, setStatePanelVisible] = useState(true);
 
   const [showResourcesPanel, setShowResourcesPanel] = useState(true);
   const [showResourceLabels, setShowResourceLabels] = useState(true);
@@ -345,15 +351,15 @@ const [statePanelVisible, setStatePanelVisible] = useState(true);
     alert(`Exemplo de alerta: você clicou em ${msg}!`);
   }
 
-// Para exportar o fluxo atual
-function handleExport() {
-  exportFlowState(nodes, edges);
-}
+  // Para exportar o fluxo atual
+  function handleExport() {
+    exportFlowState(nodes, edges);
+  }
 
-// Para importar um fluxo
-function handleImport() {
-  importFlowState(setNodes, setEdges);
-}
+  // Para importar um fluxo
+  function handleImport() {
+    importFlowState(setNodes, setEdges);
+  }
 
   function handleExampleOpen() {
     setShowExamples(true);
@@ -370,46 +376,46 @@ function handleImport() {
     }
   }
 
-// Para exportar todas as abas
-function handleExportAllTabs() {
-  exportAllTabs(tabs);
-}
-
-// Para importar todas as abas
-function handleImportAllTabs(importedTabs) {
-  const updatedTabs = [...tabs];
-  const newTabs = importedTabs.map((tab, idx) => {
-    const uniqueName = getUniqueTabName(tab.name, updatedTabs);
-    const newTab = {
-      ...tab,
-      name: uniqueName,
-      id: `tab-${Date.now()}-${Math.random()}-${idx}` // Garante unicidade
-    };
-    updatedTabs.push(newTab);
-    return newTab;
-  });
-  setTabs([...tabs, ...newTabs]);
-  if (newTabs.length > 0) {
-    setActiveTabId(newTabs[0].id);
+  // Para exportar todas as abas
+  function handleExportAllTabs() {
+    exportAllTabs(tabs);
   }
-}
+
+  // Para importar todas as abas
+  function handleImportAllTabs(importedTabs) {
+    const updatedTabs = [...tabs];
+    const newTabs = importedTabs.map((tab, idx) => {
+      const uniqueName = getUniqueTabName(tab.name, updatedTabs);
+      const newTab = {
+        ...tab,
+        name: uniqueName,
+        id: `tab-${Date.now()}-${Math.random()}-${idx}` // Garante unicidade
+      };
+      updatedTabs.push(newTab);
+      return newTab;
+    });
+    setTabs([...tabs, ...newTabs]);
+    if (newTabs.length > 0) {
+      setActiveTabId(newTabs[0].id);
+    }
+  }
 
   // Adiciona uma nova aba
-function handleAddTab() {
-  const desiredName = `Fluxo ${tabs.length + 1}`;
-  const uniqueName = getUniqueTabName(desiredName, tabs);
-  const newId = `tab-${Date.now()}-${tabs.length + 1}`; // Garante unicidade
-  setTabs([
-    ...tabs,
-    {
-      id: newId,
-      name: uniqueName,
-      nodes: [],
-      edges: [],
-    }
-  ]);
-  setActiveTabId(newId);
-}
+  function handleAddTab() {
+    const desiredName = `Fluxo ${tabs.length + 1}`;
+    const uniqueName = getUniqueTabName(desiredName, tabs);
+    const newId = `tab-${Date.now()}-${tabs.length + 1}`; // Garante unicidade
+    setTabs([
+      ...tabs,
+      {
+        id: newId,
+        name: uniqueName,
+        nodes: [],
+        edges: [],
+      }
+    ]);
+    setActiveTabId(newId);
+  }
 
   // Fecha uma aba
   function handleCloseTab(tabId) {
@@ -468,47 +474,47 @@ function handleAddTab() {
   }
 
   // Função utilitária para ocultar/exibir painéis e grid temporariamente durante exportação
-async function exportWithPanelsHidden(exportFn: () => void) {
-  // Oculta painéis/grid e ResourcesPanel
-  togglePanelsAndGrid(true);
-  setShowResourcesPanel(false);
+  async function exportWithPanelsHidden(exportFn: () => void) {
+    // Oculta painéis/grid e ResourcesPanel
+    togglePanelsAndGrid(true);
+    setShowResourcesPanel(false);
 
-  // Aguarda o DOM atualizar (pode ajustar o delay se necessário)
-  await new Promise(resolve => setTimeout(resolve, 100));
+    // Aguarda o DOM atualizar (pode ajustar o delay se necessário)
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Executa a exportação
-  exportFn();
+    // Executa a exportação
+    exportFn();
 
-  // Aguarda exportação terminar (ajuste se necessário)
-  setTimeout(() => {
-    // Restaura painéis/grid e ResourcesPanel
-    togglePanelsAndGrid(false);
-    setShowResourcesPanel(true);
-  }, 500);
-}
+    // Aguarda exportação terminar (ajuste se necessário)
+    setTimeout(() => {
+      // Restaura painéis/grid e ResourcesPanel
+      togglePanelsAndGrid(false);
+      setShowResourcesPanel(true);
+    }, 500);
+  }
 
   // Funções de exportação
-function handleExportPNG() {
-  if (flowAreaRef.current) {
-    exportWithPanelsHidden(() =>
-      exportFlowToPNG(flowAreaRef.current, `${activeTabId}.png`)
-    );
+  function handleExportPNG() {
+    if (flowAreaRef.current) {
+      exportWithPanelsHidden(() =>
+        exportFlowToPNG(flowAreaRef.current, `${activeTabId}.png`)
+      );
+    }
   }
-}
-function handleExportJPG() {
-  if (flowAreaRef.current) {
-    exportWithPanelsHidden(() =>
-      exportFlowToJPG(flowAreaRef.current, `${activeTabId}.jpg`)
-    );
+  function handleExportJPG() {
+    if (flowAreaRef.current) {
+      exportWithPanelsHidden(() =>
+        exportFlowToJPG(flowAreaRef.current, `${activeTabId}.jpg`)
+      );
+    }
   }
-}
-function handleExportSVG() {
-  if (flowAreaRef.current) {
-    exportWithPanelsHidden(() =>
-      exportFlowToSVG(flowAreaRef.current, `${activeTabId}.svg`)
-    );
+  function handleExportSVG() {
+    if (flowAreaRef.current) {
+      exportWithPanelsHidden(() =>
+        exportFlowToSVG(flowAreaRef.current, `${activeTabId}.svg`)
+      );
+    }
   }
-}
   function handleExportMermaid() {
     exportFlowToMermaid(nodes, edges, `${activeTabId}.mmd`);
   }
@@ -524,147 +530,174 @@ function handleExportSVG() {
   }
 
   // Função para alternar todos os painéis e o grid, incluindo o ResourcesPanel
-function handleTogglePanelsAndGrid() {
-  togglePanelsAndGrid(!panelsHidden);
-  setPanelsHidden(h => !h);
-  setShowResourcesPanel(v => !v); // Oculta/exibe o ResourcesPanel via estado
-  setStatePanelVisible(v => !v);
-}
-
-function handleExportPDF() {
-  if (flowAreaRef.current) {
-    exportWithPanelsHidden(() =>
-      exportCurrentFlowToPDF(flowAreaRef.current, `${activeTabId}.pdf`)
-    );
+  function handleTogglePanelsAndGrid() {
+    togglePanelsAndGrid(!panelsHidden);
+    setPanelsHidden(h => !h);
+    setShowResourcesPanel(v => !v); // Oculta/exibe o ResourcesPanel via estado
+    setStatePanelVisible(v => !v);
   }
-}
 
-function handleExportAllPDF() {
-  if (flowAreaRef.current) {
-    exportWithPanelsHidden(() =>
-      exportAllTabsToPDF(tabs, flowAreaRef.current)
-    );
+  function handleExportPDF() {
+    if (flowAreaRef.current) {
+      exportWithPanelsHidden(() =>
+        exportCurrentFlowToPDF(flowAreaRef.current, `${activeTabId}.pdf`)
+      );
+    }
   }
-}
 
-function handleNodeDoubleClick(event, node) {
-  const action = node.data?.onDoubleClickAction;
-  if (!action) return;
-  if (action.type === "tab") {
-    setActiveTabId(action.value);
-  } else if (action.type === "url") {
-    window.open(action.value, "_blank");
+  function handleExportAllPDF() {
+    if (flowAreaRef.current) {
+      exportWithPanelsHidden(() =>
+        exportAllTabsToPDF(tabs, flowAreaRef.current)
+      );
+    }
   }
-}
+
+  function handleNodeDoubleClick(event, node) {
+    const action = node.data?.onDoubleClickAction;
+    if (!action) return;
+    if (action.type === "tab") {
+      setActiveTabId(action.value);
+    } else if (action.type === "url") {
+      window.open(action.value, "_blank");
+    }
+  }
 
   return (
     <div style={Styles.Global.Background}>
+      {/* Botão para alternar visualização */}
+      <div style={{ padding: 8, background: "#f8fafc", borderBottom: "1px solid #e5e7eb" }}>
+        <button
+          onClick={() => setView3D(v => !v)}
+          style={{
+            padding: "6px 18px",
+            borderRadius: 4,
+            border: "1px solid #bbb",
+            background: view3D ? "#e0e7ef" : "#fff",
+            fontWeight: 500,
+            cursor: "pointer"
+          }}
+        >
+          {view3D ? "Voltar para Fluxo" : "Visualizar em 3D"}
+        </button>
+      </div>
 
-      {/* Abas */}
-      <TabsBar
-        tabs={tabs}
-        activeTabId={activeTabId}
-        editingTabId={editingTabId}
-        editingTabName={editingTabName}
-        onTabClick={setActiveTabId}
-        onTabDoubleClick={handleStartEditTab}
-        onTabClose={handleCloseTab}
-        onAddTab={handleAddTab}
-        onEditTabNameChange={setEditingTabName}
-        onSaveTabName={handleSaveTabName}
-        onCancelEditTab={handleCancelEditTab}
-      />
-      {/* Barra de menu superior */}
-      <TopMenuBar
-        onSave={() => handleTest("onSave")}
-        onExport={handleExport}
-        onImport={handleImport}
-        onExample={handleExampleOpen}
-        onToggleIcons={() => setShowAlertIcons(v => !v)}
-        iconsVisible={showAlertIcons}
-        onExportAllTabs={handleExportAllTabs}
-        onImportAllTabs={handleImportAllTabs}
-        onExportPNG={handleExportPNG}
-        onExportJPG={handleExportJPG}
-        onExportSVG={handleExportSVG}
-        onExportPDF={handleExportPDF}
-        onExportAllPDF={handleExportAllPDF}
-        onExportMermaid={handleExportMermaid}
-        onExportAllMermaid={handleExportAllMermaid}
-        onExportDrawio={handleExportTabToDrawio}
-        onExportAllDrawio={handleExportAllTabsToDrawio}
-        onToggleResourcesPanel={() => setShowResourcesPanel(v => !v)}
-        resourcesPanelVisible={showResourcesPanel}
-        onToggleResourceLabels={() => setShowResourceLabels(v => !v)}
-        resourceLabelsVisible={showResourceLabels}
-        handleTogglePanelsAndGrid={handleTogglePanelsAndGrid}
-        panelsHidden={panelsHidden}
-        onToggleStatePanel={() => setStatePanelVisible(v => !v)}
-        statePanelVisible={statePanelVisible}
-      // onToggleLabels={() => setShowLabels((v) => !v)}
-      // labelsVisible={showLabels}
-      // onTogglePanels={() => setPanelsVisible((v) => !v)}
-      // panelsVisible={panelsVisible}
-      />
-      {/* Wrapper dedicado apenas ao fluxo */}
-      <div className="flow-area" ref={flowAreaRef} style={{ width: "100%", height: "100%", position: "relative", flex: 1 }}>
-      {/* ReactFlow da aba ativa */}
-      <ReactFlow
-        ref={ref}
-        nodes={nodes} // armazena os nodes dos recursos
-        edges={edges} // armazena as ligações entre os recursos
-        defaultEdgeOptions={defaultEdgeOptions}
-        nodeTypes={nodeTypes} // Tipos de nós personalizados disponíveis em um fluxo.
-        onNodesChange={onNodesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado ao arrastar, selecionar e mover um nó.
-        onEdgesChange={onEdgesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado na seleção e remoção de arestas.
-        onConnect={onConnect} // adiciona as novas ligações entre os nodes em edges
-        onInit={setReactFlowInstance} // O onInitretorno de chamada é chamado quando a viewport é inicializada. Nesse ponto, você pode usar a instância para chamar métodos como fitViewou zoomTo.
+      {/* Alterna entre visualização 3D e padrão */}
+      {view3D ? (
+        <Project3DMap tabs={tabs} onBack={() => setView3D(false)} />
+      ) : (
+        <>
 
-        onDragOver={(event) => onDragOver(event)} // a dragged item is being dragged over a valid drop target, every few hundred milliseconds.
-        onDrop={onDrop} // an item is dropped on a valid drop target
 
-        onNodeDrag={onNodeDrag} // Arrastar: detecta node sobreposto e pode sinalizar visualmente
-        onNodeDragStop={onNodeDragStop} // Soltar: torna filho do node sobreposto (basegroup) ou remove do grupo
-        onNodeDragStart={onNodeDragStart}
 
-        onPaneClick={onPaneClick} // Este manipulador de eventos é chamado quando o usuário clica dentro do painel.
-        onNodeContextMenu={onNodeContextMenu} // Este manipulador de eventos é chamado quando um usuário clica com o botão direito em um nó.
-        onNodeDoubleClick={handleNodeDoubleClick}
 
-        fitView // o fluxo será ampliado e panorâmico para ajustar todos os nós fornecidos inicialmente
-      >
-        <Controls />
-        <MiniMap />
-        <Background variant="dots" gap={12} size={1} />
-        {/* Renderiza o ResourcesPanel apenas se showResourcesPanel for true */}
-          {showResourcesPanel && (
-            <ResourcesPanel
-              componentsList={componentsList}
-              showLabels={showResourceLabels}
-              setShowLabels={setShowResourceLabels}
-            />
-          )}
-        {/* Renderize o painel de estado apenas se statePanelVisible for true */}
-      {statePanelVisible && (
-        <StatePanel />
-        )}
-        {configPanelNodeId && (
-          <ResourceConfigPanel
-            nodeId={configPanelNodeId}
-            onClose={() => setConfigPanelNodeId(null)}
-            tabs={tabs} 
+          {/* Abas */}
+          <TabsBar
+            tabs={tabs}
+            activeTabId={activeTabId}
+            editingTabId={editingTabId}
+            editingTabName={editingTabName}
+            onTabClick={setActiveTabId}
+            onTabDoubleClick={handleStartEditTab}
+            onTabClose={handleCloseTab}
+            onAddTab={handleAddTab}
+            onEditTabNameChange={setEditingTabName}
+            onSaveTabName={handleSaveTabName}
+            onCancelEditTab={handleCancelEditTab}
           />
-        )}
-        {menu && <ContextMenu onClick={onPaneClick} {...menu} />}
-        {showExamples && (
-          <ExamplesModal
-            models={predefinedModels}
-            onSelect={handleExampleSelect}
-            onClose={() => setShowExamples(false)}
+          {/* Barra de menu superior */}
+          <TopMenuBar
+            onSave={() => handleTest("onSave")}
+            onExport={handleExport}
+            onImport={handleImport}
+            onExample={handleExampleOpen}
+            onToggleIcons={() => setShowAlertIcons(v => !v)}
+            iconsVisible={showAlertIcons}
+            onExportAllTabs={handleExportAllTabs}
+            onImportAllTabs={handleImportAllTabs}
+            onExportPNG={handleExportPNG}
+            onExportJPG={handleExportJPG}
+            onExportSVG={handleExportSVG}
+            onExportPDF={handleExportPDF}
+            onExportAllPDF={handleExportAllPDF}
+            onExportMermaid={handleExportMermaid}
+            onExportAllMermaid={handleExportAllMermaid}
+            onExportDrawio={handleExportTabToDrawio}
+            onExportAllDrawio={handleExportAllTabsToDrawio}
+            onToggleResourcesPanel={() => setShowResourcesPanel(v => !v)}
+            resourcesPanelVisible={showResourcesPanel}
+            onToggleResourceLabels={() => setShowResourceLabels(v => !v)}
+            resourceLabelsVisible={showResourceLabels}
+            handleTogglePanelsAndGrid={handleTogglePanelsAndGrid}
+            panelsHidden={panelsHidden}
+            onToggleStatePanel={() => setStatePanelVisible(v => !v)}
+            statePanelVisible={statePanelVisible}
+          // onToggleLabels={() => setShowLabels((v) => !v)}
+          // labelsVisible={showLabels}
+          // onTogglePanels={() => setPanelsVisible((v) => !v)}
+          // panelsVisible={panelsVisible}
           />
-        )}
-      </ReactFlow>
-</div>
+          {/* Wrapper dedicado apenas ao fluxo */}
+          <div className="flow-area" ref={flowAreaRef} style={{ width: "100%", height: "100%", position: "relative", flex: 1 }}>
+            {/* ReactFlow da aba ativa */}
+            <ReactFlow
+              ref={ref}
+              nodes={nodes} // armazena os nodes dos recursos
+              edges={edges} // armazena as ligações entre os recursos
+              defaultEdgeOptions={defaultEdgeOptions}
+              nodeTypes={nodeTypes} // Tipos de nós personalizados disponíveis em um fluxo.
+              onNodesChange={onNodesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado ao arrastar, selecionar e mover um nó.
+              onEdgesChange={onEdgesChange} // Use este manipulador de eventos para adicionar interatividade a um fluxo controlado. Ele é chamado na seleção e remoção de arestas.
+              onConnect={onConnect} // adiciona as novas ligações entre os nodes em edges
+              onInit={setReactFlowInstance} // O onInitretorno de chamada é chamado quando a viewport é inicializada. Nesse ponto, você pode usar a instância para chamar métodos como fitViewou zoomTo.
+
+              onDragOver={(event) => onDragOver(event)} // a dragged item is being dragged over a valid drop target, every few hundred milliseconds.
+              onDrop={onDrop} // an item is dropped on a valid drop target
+
+              onNodeDrag={onNodeDrag} // Arrastar: detecta node sobreposto e pode sinalizar visualmente
+              onNodeDragStop={onNodeDragStop} // Soltar: torna filho do node sobreposto (basegroup) ou remove do grupo
+              onNodeDragStart={onNodeDragStart}
+
+              onPaneClick={onPaneClick} // Este manipulador de eventos é chamado quando o usuário clica dentro do painel.
+              onNodeContextMenu={onNodeContextMenu} // Este manipulador de eventos é chamado quando um usuário clica com o botão direito em um nó.
+              onNodeDoubleClick={handleNodeDoubleClick}
+
+              fitView // o fluxo será ampliado e panorâmico para ajustar todos os nós fornecidos inicialmente
+            >
+              <Controls />
+              <MiniMap />
+              <Background variant="dots" gap={12} size={1} />
+              {/* Renderiza o ResourcesPanel apenas se showResourcesPanel for true */}
+              {showResourcesPanel && (
+                <ResourcesPanel
+                  componentsList={componentsList}
+                  showLabels={showResourceLabels}
+                  setShowLabels={setShowResourceLabels}
+                />
+              )}
+              {/* Renderize o painel de estado apenas se statePanelVisible for true */}
+              {statePanelVisible && (
+                <StatePanel />
+              )}
+              {configPanelNodeId && (
+                <ResourceConfigPanel
+                  nodeId={configPanelNodeId}
+                  onClose={() => setConfigPanelNodeId(null)}
+                  tabs={tabs}
+                />
+              )}
+              {menu && <ContextMenu onClick={onPaneClick} {...menu} />}
+              {showExamples && (
+                <ExamplesModal
+                  models={predefinedModels}
+                  onSelect={handleExampleSelect}
+                  onClose={() => setShowExamples(false)}
+                />
+              )}
+            </ReactFlow>
+          </div>
+        </>
+      )}
     </div>
   );
 }

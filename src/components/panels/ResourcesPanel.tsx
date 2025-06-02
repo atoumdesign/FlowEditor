@@ -93,12 +93,12 @@ export default function ResourcesPanel({componentsList, showLabels, setShowLabel
                 maxWidth: maxWidth
             }}
         >
-            <div 
+            {/* <div 
                 ref={panelRef} 
                 style={{ 
                     width: "100%", 
                     height: "100%" 
-                    }}>
+                    }}> */}
                 
                 <Accordion
                     items={accordionItems}
@@ -120,23 +120,7 @@ export default function ResourcesPanel({componentsList, showLabels, setShowLabel
                     }}
                     onMouseDown={onMouseDown}
                 />
-
-                {/* <button
-                    onClick={() => setShowLabels((v) => !v)}
-                    style={{
-                        marginBottom: 8,
-                        fontSize: 11,
-                        color: "#2563eb",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 0,
-                        textDecoration: "underline"
-                    }}
-                >
-                    {showLabels ? "Ocultar nomes" : "Mostrar nomes"}
-                </button> */}
-            </div>
+            {/* </div> */}
         </Panel>
     )
 }

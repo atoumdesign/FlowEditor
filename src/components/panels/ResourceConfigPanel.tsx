@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useReactFlow, Panel } from "@xyflow/react";
+import { Accordion } from '@blendmesh/components-ui'
 
 import {
   defaultLambdaProperties,
@@ -35,9 +36,6 @@ function getEnumOptions(enumObj) {
     <option key={value} value={value}>{value}</option>
   ));
 }
-
-
-
 
 
 const MIN_WIDTH = 280;
@@ -82,6 +80,8 @@ export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
   // Estado local para o label
   const [localLabel, setLocalLabel] = useState(node?.data?.label || "");
   const [width, setWidth] = useState(340);
+  const minWidth = 220
+  const maxWidth = 350
   const resizing = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(width);
@@ -113,41 +113,63 @@ export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
   };
 
   // Redimensionamento
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    resizing.current = true;
-    startX.current = e.clientX;
-    startWidth.current = width;
-    document.body.style.cursor = "ew-resize";
-  };
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    resizing.current = true
+    startX.current = e.clientX
+    startWidth.current = width
+    document.addEventListener("mousemove", onMouseMove)
+    document.addEventListener("mouseup", onMouseUp)
+  }
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!resizing.current) return
+    let newWidth = startWidth.current - (e.clientX - startX.current)
+    if (newWidth < minWidth) newWidth = minWidth
+    if (newWidth > maxWidth) newWidth = maxWidth
+    setWidth(newWidth)
+  }
+
+  const onMouseUp = () => {
+    resizing.current = false
+    document.removeEventListener("mousemove", onMouseMove)
+    document.removeEventListener("mouseup", onMouseUp)
+  }
+  // const onMouseDown = (e) => {
+  //   e.preventDefault();
+  //   resizing.current = true;
+  //   startX.current = e.clientX;
+  //   startWidth.current = width;
+  //   document.body.style.cursor = "ew-resize";
+  // };
 
   // Handler para alteração de propriedades
   const handlePropertyChange = (key, value) => {
     setLocalProperties((prev) => ({ ...prev, [key]: value }));
   };
 
-  useEffect(() => {
-    const onMouseMove = (e) => {
-      if (!resizing.current) return;
-      const newWidth = Math.min(
-        Math.max(startWidth.current + (startX.current - e.clientX), MIN_WIDTH),
-        MAX_WIDTH
-      );
-      setWidth(newWidth);
-    };
-    const onMouseUp = () => {
-      resizing.current = false;
-      document.body.style.cursor = "";
-    };
-    if (resizing.current) {
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
-    }
-  }, [width]);
+  // useEffect(() => {
+  //   const onMouseMove = (e) => {
+  //     if (!resizing.current) return;
+  //     const newWidth = Math.min(
+  //       Math.max(startWidth.current + (startX.current - e.clientX), MIN_WIDTH),
+  //       MAX_WIDTH
+  //     );
+  //     setWidth(newWidth);
+  //   };
+  //   const onMouseUp = () => {
+  //     resizing.current = false;
+  //     document.body.style.cursor = "";
+  //   };
+  //   if (resizing.current) {
+  //     window.addEventListener("mousemove", onMouseMove);
+  //     window.addEventListener("mouseup", onMouseUp);
+  //     return () => {
+  //       window.removeEventListener("mousemove", onMouseMove);
+  //       window.removeEventListener("mouseup", onMouseUp);
+  //     };
+  //   }
+  // }, [width]);
 
   if (!node) return null;
 
@@ -157,66 +179,10 @@ export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
   const defaultProperties = defaultPropertiesMap[nodeType] || {};
   const propertyKeys = Object.keys({ ...defaultProperties, ...localProperties });
 
-  return (
-    <>
-      {/* Backdrop para fechar ao clicar fora */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 999,
-          background: "rgba(0,0,0,0.01)",
-        }}
-        onClick={onClose}
-      />
-      <Panel
-        position="top-right"
-        style={{
-          width,
-          height: "100vh",
-          background: "#fff",
-          borderLeft: "1px solid #eee",
-          boxShadow: "-2px 0 8px #0001",
-          zIndex: 1000,
-          padding: 24,
-          overflowY: "auto",
-          transition: "width 0.2s",
-          display: "flex",
-          flexDirection: "column",
-          userSelect: "none",
-        }}
-        onClick={e => e.stopPropagation()} // Não fecha ao clicar dentro
-      >
-        {/* Resizer */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: 8,
-            height: "100%",
-            cursor: "ew-resize",
-            zIndex: 1001,
-            userSelect: "none",
-          }}
-          onMouseDown={onMouseDown}
-        />
-        <button
-          style={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            background: "none",
-            border: "none",
-            fontSize: 22,
-            cursor: "pointer",
-          }}
-          onClick={onClose}
-          title="Fechar"
-        >
-          ×
-        </button>
-        <h3>Configurações do recurso</h3>
+  const accordionItems = [
+    {
+      title: "Configurações do recurso",
+      content: <div style={{fontSize: 12}}>
         <div style={{ margin: "16px 0" }}>
           <label>
             Label:
@@ -236,30 +202,6 @@ export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
             />
           </label>
         </div>
-        {/* <div style={{ margin: "16px 0" }}>
-          <label style={{ fontWeight: 600 }}>Properties:</label>
-          {propertyKeys.length === 0 && (
-            <div style={{ color: "#888", fontSize: 13 }}>Nenhuma propriedade definida.</div>
-          )}
-          {propertyKeys.map((key) => (
-            <div key={key} style={{ margin: "6px 0" }}>
-              <span style={{ width: 80, display: "inline-block" }}>{key}:</span>
-              <input
-                type="text"
-                value={localProperties[key] ?? ""}
-                onChange={e => handlePropertyChange(key, e.target.value)}
-                onBlur={commitProperties}
-                onKeyDown={e => {
-                  if (e.key === "Enter") {
-                    commitProperties();
-                    e.target.blur();
-                  }
-                }}
-                style={{ width: 140, fontSize: 13 }}
-              />
-            </div>
-          ))}
-        </div> */}
         <div style={{ margin: "16px 0" }}>
           <label style={{ fontWeight: 600 }}>Properties:</label>
           {propertyKeys.length === 0 && (
@@ -358,7 +300,11 @@ export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
             );
           })}
         </div>
-        <h4>Ação ao dar duplo clique</h4>
+      </div>,
+    },
+    {
+      title: "Link",
+      content: <div>
         <div style={{ marginBottom: 12 }}>
           <label>
             <input
@@ -395,27 +341,120 @@ export default function ResourceConfigPanel({ nodeId, onClose, tabs }) {
             style={{ width: "100%", marginBottom: 12 }}
           />
         )}
-        <div style={{ margin: "16px 0" }}>
-          <label>
-            <input
-              type="checkbox"
-              checked={!!localProperties.showCommentIcon}
-              onChange={e => setLocalProperties(prev => ({ ...prev, showCommentIcon: e.target.checked }))}
-            />
-            Exibir ícone de comentário relevante
-          </label>
-          <textarea
-            value={localProperties.comment || ""}
-            onChange={e => setLocalProperties(prev => ({ ...prev, comment: e.target.value }))}
-            placeholder="Comentário relevante..."
-            style={{ width: "100%", minHeight: 40, marginTop: 4 }}
+      </div>,
+    },
+    {
+      title: "Comentários",
+      content: <div style={{ margin: "16px 0" }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={!!localProperties.showCommentIcon}
+            onChange={e => setLocalProperties(prev => ({ ...prev, showCommentIcon: e.target.checked }))}
           />
-          <button onClick={handleSaveProperties}>Salvar</button>
-          <button onClick={onClose} style={{ marginLeft: 8 }}>Cancelar</button>
-        </div>
-        <pre style={{ background: "#f8f8f8", padding: 8, borderRadius: 4 }}>
-          {JSON.stringify(node.data, null, 2)}
-        </pre>
+          Exibir ícone de comentário relevante
+        </label>
+        <textarea
+          value={localProperties.comment || ""}
+          onChange={e => setLocalProperties(prev => ({ ...prev, comment: e.target.value }))}
+          placeholder="Comentário relevante..."
+          style={{ width: "100%", minHeight: 40, marginTop: 4 }}
+        />
+        <button onClick={handleSaveProperties}>Salvar</button>
+        <button onClick={onClose} style={{ marginLeft: 8 }}>Cancelar</button>
+      </div>,
+    },
+    {
+      title: "Resumo stado do node",
+      content: <pre
+        style={{
+          background: "#f8f8f8",
+          padding: 8,
+          borderRadius: 4,
+          fontSize: 12
+        }}
+      >
+        {JSON.stringify(node, null, 2)}
+      </pre>,
+    },
+  ];
+
+
+
+
+  return (
+    <>
+      {/* Backdrop para fechar ao clicar fora */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 999,
+          background: "rgba(0,0,0,0.01)",
+        }}
+        onClick={onClose}
+      />
+      <Panel
+        position="top-right"
+        style={{
+          borderRadius: '0px',
+          width: width,
+          height: "100vh",
+          background: 'transparent',
+          minWidth: minWidth,
+          maxWidth: maxWidth,
+          // borderLeft: "1px solid #eee",
+          // boxShadow: "-2px 0 8px #0001",
+          zIndex: 1000,
+          padding: 4,
+          // overflowY: "auto",
+          // transition: "width 0.2s",
+          // display: "flex",
+          // flexDirection: "column",
+          userSelect: "none",
+        }}
+        onClick={e => e.stopPropagation()} // Não fecha ao clicar dentro
+      >
+
+        <Accordion
+          items={accordionItems}
+          defaultOpenIndexes={[0, 2]}
+          scrollable={true}
+        // maxHeight={250}   // altura máxima do conteúdo aberto (opcional)
+        />
+        {/* Resizer */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: 8,
+            height: "100%",
+            cursor: "ew-resize",
+            zIndex: 1001,
+            userSelect: "none",
+          }}
+          onMouseDown={onMouseDown}
+        />
+        {/* <button
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            background: "none",
+            border: "none",
+            fontSize: 22,
+            cursor: "pointer",
+          }}
+          onClick={onClose}
+          title="Fechar"
+        >
+          ×
+        </button> */}
+
+
+
+
       </Panel>
     </>
   );

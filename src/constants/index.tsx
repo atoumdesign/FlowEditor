@@ -1,5 +1,5 @@
 
-
+// lambda enum --------------------------------------------------------
 
 export enum Architectures {
     X86 = "x86_64",
@@ -39,11 +39,6 @@ interface Environment {
     Variables: Record<string, string>;
 }
 
-interface FileSystemConfig {
-    Arn: string;
-    LocalMountPath: string;
-}
-
 interface TracingConfig {
     Mode: "Active" | "PassThrough";
 }
@@ -53,15 +48,21 @@ interface VpcConfig {
     SubnetIds: string[];
 }
 
+// ---------------------------------------------------------------------------------
 
 interface LambdaProperties {
     Architectures?: Architectures;
     FunctionName: string;
     Runtime: Runtime;
     Role: string;
+    Handler: string;
+    Code: Code;
     MemorySize?: number;
+    Description?: string;
     Timeout?: number;
-    Environment?: Record<string, string>;
+    TracingConfig?: TracingConfig;
+    VpcConfig?: VpcConfig;
+    Environment?: Environment;
     Tags?: Record<string, string>;
 }
 
@@ -69,44 +70,78 @@ export const defaultLambdaProperties: LambdaProperties = {
     FunctionName: "MyLambda",
     Runtime: Runtime.NODE22,
     Role: "",
+    Handler: "index.handler",
+    Code: {},
+    Description: "",
+    Architectures: Architectures.ARM,
     MemorySize: 128,
     Timeout: 3,
+    Environment: {},
+    VpcConfig: { SecurityGroupIds: [], SubnetIds: [] },
+    TracingConfig: { Mode: "PassThrough" },
+    Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- EC2 Instance ---
 export interface EC2InstanceProperties {
-    InstanceId?: string;
-    InstanceType: string;
-    AmiId: string;
-    KeyName?: string;
-    SubnetId?: string;
-    SecurityGroupIds?: string[];
-    Tags?: Record<string, string>;
+  InstanceType: string;
+  ImageId: string;
+  KeyName?: string;
+  SubnetId?: string;
+  SecurityGroupIds?: string[];
+  BlockDeviceMappings?: Array<{
+    DeviceName: string;
+    Ebs: {
+      VolumeSize?: number;
+      VolumeType?: string;
+      DeleteOnTermination?: boolean;
+      Encrypted?: boolean;
+    };
+  }>;
+  Tags?: Record<string, string>;
 }
 
 export const defaultEC2InstanceProperties: EC2InstanceProperties = {
-    InstanceType: "t3.micro",
-    AmiId: "",
-    KeyName: "",
-    SubnetId: "",
-    SecurityGroupIds: [],
-    Tags: {},
+  InstanceType: "t3.micro",
+  ImageId: "",
+  KeyName: "",
+  SubnetId: "",
+  SecurityGroupIds: [],
+  BlockDeviceMappings: [],
+  Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- S3 Bucket ---
 export interface S3BucketProperties {
-    BucketName: string;
-    Versioning?: boolean;
-    Encryption?: boolean;
-    Tags?: Record<string, string>;
+  BucketName?: string;
+  AccessControl?: string;
+  VersioningConfiguration?: {
+    Status: "Enabled" | "Suspended";
+  };
+  BucketEncryption?: {
+    ServerSideEncryptionConfiguration: Array<{
+      ServerSideEncryptionByDefault: {
+        SSEAlgorithm: string;
+        KMSMasterKeyID?: string;
+      };
+    }>;
+  };
+  Tags?: Record<string, string>;
 }
 
 export const defaultS3BucketProperties: S3BucketProperties = {
-    BucketName: "my-bucket",
-    Versioning: false,
-    Encryption: false,
-    Tags: {},
+  BucketName: "my-bucket",
+  AccessControl: "Private",
+  VersioningConfiguration: { Status: "Suspended" },
+  BucketEncryption: undefined,
+  Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- RDS MySQL Instance ---
 export interface RDSMySQLInstanceProperties {
@@ -119,6 +154,8 @@ export interface RDSMySQLInstanceProperties {
     AllocatedStorage: number;
     VpcSecurityGroupIds?: string[];
     DBSubnetGroupName?: string;
+    PubliclyAccessible?: boolean;
+    StorageType?: string;
     Tags?: Record<string, string>;
 }
 
@@ -132,8 +169,12 @@ export const defaultRDSMySQLInstanceProperties: RDSMySQLInstanceProperties = {
     AllocatedStorage: 20,
     VpcSecurityGroupIds: [],
     DBSubnetGroupName: "",
+    PubliclyAccessible: false,
+    StorageType: "gp2",
     Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- RDS MariaDB Instance ---
 export interface RDSMariaDBInstanceProperties {
@@ -146,6 +187,8 @@ export interface RDSMariaDBInstanceProperties {
     AllocatedStorage: number;
     VpcSecurityGroupIds?: string[];
     DBSubnetGroupName?: string;
+    PubliclyAccessible?: boolean;
+    StorageType?: string;
     Tags?: Record<string, string>;
 }
 
@@ -159,8 +202,12 @@ export const defaultRDSMariaDBInstanceProperties: RDSMariaDBInstanceProperties =
     AllocatedStorage: 20,
     VpcSecurityGroupIds: [],
     DBSubnetGroupName: "",
+    PubliclyAccessible: false,
+    StorageType: "gp2",
     Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- RDS PostgreSQL Instance ---
 export interface RDSPostgresInstanceProperties {
@@ -173,6 +220,8 @@ export interface RDSPostgresInstanceProperties {
     AllocatedStorage: number;
     VpcSecurityGroupIds?: string[];
     DBSubnetGroupName?: string;
+    PubliclyAccessible?: boolean;
+    StorageType?: string;
     Tags?: Record<string, string>;
 }
 
@@ -186,38 +235,48 @@ export const defaultRDSPostgresInstanceProperties: RDSPostgresInstanceProperties
     AllocatedStorage: 20,
     VpcSecurityGroupIds: [],
     DBSubnetGroupName: "",
+    PubliclyAccessible: false,
+    StorageType: "gp2",
     Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- VPC ---
 export interface VPCProperties {
-    VpcId?: string;
-    CidrBlock: string;
-    EnableDnsSupport?: boolean;
-    EnableDnsHostnames?: boolean;
-    Tags?: Record<string, string>;
+  CidrBlock: string;
+  EnableDnsSupport?: boolean;
+  EnableDnsHostnames?: boolean;
+  InstanceTenancy?: "default" | "dedicated" | "host";
+  Tags?: Record<string, string>;
 }
 
 export const defaultVPCProperties: VPCProperties = {
-    VpcId: "",
-    CidrBlock: "10.0.0.0/16",
-    EnableDnsSupport: true,
-    EnableDnsHostnames: true,
-    Tags: {},
+  CidrBlock: "10.0.0.0/16",
+  EnableDnsSupport: true,
+  EnableDnsHostnames: true,
+  InstanceTenancy: "default",
+  Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- Account ---
 export interface AccountProperties {
-    AccountId: string;
-    AccountName?: string;
-    Email?: string;
+  AccountName: string;
+  Email: string;
+  AccountId?: string;
+  Tags?: Record<string, string>;
 }
 
 export const defaultAccountProperties: AccountProperties = {
-    AccountId: "",
-    AccountName: "",
-    Email: "",
+  AccountName: "",
+  Email: "",
+  AccountId: "",
+  Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- Private Subnet ---
 export interface PrivateSubnetProperties {
@@ -235,6 +294,8 @@ export const defaultPrivateSubnetProperties: PrivateSubnetProperties = {
     AvailabilityZone: "",
     Tags: {},
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 // --- Public Subnet ---
 export interface PublicSubnetProperties {
@@ -255,6 +316,7 @@ export const defaultPublicSubnetProperties: PublicSubnetProperties = {
     Tags: {},
 };
 
+////////////////////////////////////////////////////////////////////////////////////
 
 // Exemplo de estrutura no arquivo de constantes (constants/index.tsx):
 

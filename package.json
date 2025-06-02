@@ -13,6 +13,8 @@
     "@blendmesh/components-ui": "^0.0.1",
     "@blendmesh/icons": "^0.0.7",
     "@radix-ui/react-context-menu": "^2.2.15",
+    "@react-three/drei": "^10.1.2",
+    "@react-three/fiber": "^9.1.2",
     "@tailwindcss/vite": "^4.1.7",
     "@xyflow/react": "^12.6.4",
     "class-variance-authority": "^0.7.1",
@@ -26,6 +28,7 @@
     "svg2pdf.js": "^2.5.0",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.7",
+    "three": "^0.177.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
